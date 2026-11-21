@@ -849,6 +849,57 @@
       background: var(--h-accent);
       border-radius: 999px;
     }
+
+    /* Collapsible Host Sections & Decision Signs */
+    .collapsible-header {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font-family: inherit;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      padding: 0;
+      text-align: left;
+    }
+    .collapsible-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      color: var(--h-accent);
+    }
+    .count-pill {
+      background: #082223;
+      border: 1px solid var(--h-border);
+      color: #fff;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .count-pill.has-items {
+      background: var(--h-accent);
+      color: #052120;
+      border-color: #9bf5e6;
+    }
+    .chevron-icon {
+      font-size: 13px;
+      color: var(--h-muted);
+      transition: transform 0.2s ease;
+    }
+    .chevron-icon.collapsed {
+      transform: rotate(-90deg);
+    }
+    .collapsible-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 2px;
+    }
     .req-card {
       background: #082223;
       border: 1px solid var(--h-border);
@@ -887,9 +938,28 @@
       gap: 8px;
       flex-shrink: 0;
     }
+    .decision-sign {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .decision-sign.approved {
+      background: rgba(79, 224, 200, 0.16);
+      border: 1px solid var(--h-accent);
+      color: var(--h-accent);
+    }
+    .decision-sign.disapproved {
+      background: rgba(255, 77, 90, 0.16);
+      border: 1px solid var(--red);
+      color: #ff858e;
+    }
 
     @media (prefers-reduced-motion: reduce) {
-      .btn3d, .num-tile, .h-btn, .bal-refresh-btn { transition: none !important; animation: none !important; }
+      .btn3d, .num-tile, .h-btn, .bal-refresh-btn, .chevron-icon { transition: none !important; animation: none !important; }
     }
   </style>
 </head>
@@ -1088,16 +1158,48 @@
           </div>
         </div>
 
-        <!-- VIEW 2: REQUESTS PAGE (Top-up & Withdrawal Approval / Disapproval) -->
+        <!-- VIEW 2: REQUESTS PAGE (Collapsible Top-up, Withdrawal & Recent Decisions) -->
         <div id="host-requests-view" class="hidden" style="display:flex;flex-direction:column;gap:14px;">
+          <!-- Collapsible Top-up Requests -->
           <div class="h-card">
-            <div class="h-sec-title"><span>Top-up requests</span></div>
-            <div id="h-topup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <button id="toggle-topup" class="collapsible-header" type="button" aria-expanded="true">
+              <span class="collapsible-left">
+                <span>Top-up requests</span>
+                <span id="h-topup-count" class="count-pill">0</span>
+              </span>
+              <span id="chev-topup" class="chevron-icon">▼</span>
+            </button>
+            <div id="h-topup-body" class="collapsible-body">
+              <div id="h-topup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
           </div>
 
+          <!-- Collapsible Withdrawal Requests -->
           <div class="h-card">
-            <div class="h-sec-title"><span>Withdrawal requests</span></div>
-            <div id="h-withdraw-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <button id="toggle-withdraw" class="collapsible-header" type="button" aria-expanded="true">
+              <span class="collapsible-left">
+                <span>Withdrawal requests</span>
+                <span id="h-withdraw-count" class="count-pill">0</span>
+              </span>
+              <span id="chev-withdraw" class="chevron-icon">▼</span>
+            </button>
+            <div id="h-withdraw-body" class="collapsible-body">
+              <div id="h-withdraw-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+          </div>
+
+          <!-- Collapsible Recent Decisions (Approved / Disapproved Signs) -->
+          <div class="h-card">
+            <button id="toggle-decisions" class="collapsible-header" type="button" aria-expanded="false">
+              <span class="collapsible-left">
+                <span>Recent decisions</span>
+                <span id="h-decisions-count" class="count-pill">0</span>
+              </span>
+              <span id="chev-decisions" class="chevron-icon collapsed">▼</span>
+            </button>
+            <div id="h-decisions-body" class="collapsible-body hidden">
+              <div id="h-decisions-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1177,6 +1279,12 @@
     let hostPollTimer = null;
     let knownPendingIds = new Set();
     let hostActiveView = "dashboard"; // "dashboard" | "requests"
+    let recentDecisions = []; // { id, name, kind, amount, approved, decidedAt }
+    let collapsibleState = {
+      topup: true,
+      withdraw: true,
+      decisions: false
+    };
 
     // Helpers
     const $ = (id) => document.getElementById(id);
@@ -2312,9 +2420,25 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    function toggleCollapsible(key) {
+      haptic(8);
+      collapsibleState[key] = !collapsibleState[key];
+      applyCollapsibleUI();
+    }
+
+    function applyCollapsibleUI() {
+      ["topup", "withdraw", "decisions"].forEach((key) => {
+        const open = collapsibleState[key];
+        $(`toggle-${key}`).setAttribute("aria-expanded", String(open));
+        $(`h-${key}-body`).classList.toggle("hidden", !open);
+        $(`chev-${key}`).classList.toggle("collapsed", !open);
+      });
+    }
+
     async function startHostApp() {
       showOnlyScreen("host-screen");
       setHostView("dashboard");
+      applyCollapsibleUI();
 
       $("h-btn-signout").addEventListener("click", async () => {
         await sb.auth.signOut();
@@ -2342,6 +2466,10 @@
         setHostView("dashboard");
         refreshHostDashboard(false);
       });
+
+      $("toggle-topup").addEventListener("click", () => toggleCollapsible("topup"));
+      $("toggle-withdraw").addEventListener("click", () => toggleCollapsible("withdraw"));
+      $("toggle-decisions").addEventListener("click", () => toggleCollapsible("decisions"));
 
       await refreshHostDashboard(true);
 
@@ -2424,15 +2552,23 @@
           showToast("New player request received!");
         }
 
-        renderRequestGroup("h-topup-list", pending.filter((r) => r.kind === "TOPUP"), playerMap);
-        renderRequestGroup("h-withdraw-list", pending.filter((r) => r.kind === "WITHDRAW"), playerMap);
+        const topupItems = pending.filter((r) => r.kind === "TOPUP");
+        const withdrawItems = pending.filter((r) => r.kind === "WITHDRAW");
+
+        renderRequestGroup("h-topup-list", "h-topup-count", topupItems, playerMap);
+        renderRequestGroup("h-withdraw-list", "h-withdraw-count", withdrawItems, playerMap);
+        renderRecentDecisions();
       } catch (err) {
         console.error(err);
       }
     }
 
-    function renderRequestGroup(containerId, items, playerMap) {
+    function renderRequestGroup(containerId, countId, items, playerMap) {
       const el = $(containerId);
+      const countEl = $(countId);
+      countEl.textContent = String(items.length);
+      countEl.classList.toggle("has-items", items.length > 0);
+
       if (!items.length) {
         el.innerHTML = `<div style="font-size:12px;color:var(--h-muted);">None pending.</div>`;
         return;
@@ -2441,6 +2577,12 @@
         const pInfo = playerMap.get(r.user_id);
         const curBal = pInfo ? Number(pInfo.balance) : 0;
         const timeStr = new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const payload = encodeURIComponent(JSON.stringify({
+          id: r.id,
+          name: r.name || "Player",
+          kind: r.kind,
+          amount: Number(r.amount)
+        }));
         return `
           <div class="req-card">
             <div class="req-main-row">
@@ -2449,8 +2591,8 @@
                 <div class="req-meta-line">Bal: ${curBal} · ${timeStr}</div>
               </div>
               <div class="req-btns">
-                <button class="h-btn h-btn-accent h-btn-icon" type="button" aria-label="Approve" title="Approve" onclick="hostDecideReq(${r.id}, true)">✓</button>
-                <button class="h-btn h-btn-icon" style="background:#6b1d24;border-color:#a8323c;" type="button" aria-label="Decline" title="Decline" onclick="hostDecideReq(${r.id}, false)">✕</button>
+                <button class="h-btn h-btn-accent h-btn-icon" type="button" aria-label="Approve" title="Approve" onclick="hostDecideReq(${r.id}, true, '${payload}')">✓</button>
+                <button class="h-btn h-btn-icon" style="background:#6b1d24;border-color:#a8323c;" type="button" aria-label="Disapprove" title="Disapprove" onclick="hostDecideReq(${r.id}, false, '${payload}')">✕</button>
               </div>
             </div>
           </div>
@@ -2458,14 +2600,63 @@
       }).join("");
     }
 
-    window.hostDecideReq = async function(reqId, ok) {
+    function renderRecentDecisions() {
+      const el = $("h-decisions-list");
+      const countEl = $("h-decisions-count");
+      countEl.textContent = String(recentDecisions.length);
+      countEl.classList.remove("has-items");
+
+      if (!recentDecisions.length) {
+        el.innerHTML = `<div style="font-size:12px;color:var(--h-muted);">No recent decisions yet.</div>`;
+        return;
+      }
+
+      el.innerHTML = recentDecisions.map((d) => {
+        const signClass = d.approved ? "approved" : "disapproved";
+        const signLabel = d.approved ? "✓ Approved" : "✕ Disapproved";
+        const kindLabel = d.kind === "WITHDRAW" ? "Withdraw" : "Top-up";
+        return `
+          <div class="req-card">
+            <div class="req-main-row">
+              <div class="req-info">
+                <div class="req-player-line">${esc(d.name)} · <span style="color:var(--h-accent);">${d.amount} coins</span></div>
+                <div class="req-meta-line">${kindLabel} · ${d.decidedAt}</div>
+              </div>
+              <span class="decision-sign ${signClass}">${signLabel}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.hostDecideReq = async function(reqId, ok, encodedMeta) {
       haptic();
       const { error } = await sb.rpc("decide", { p_request_id: reqId, p_ok: ok });
       if (error) {
         showToast(error.message);
         return;
       }
-      showToast(ok ? "Approved" : "Declined");
+
+      let meta = { id: reqId, name: "Player", kind: "TOPUP", amount: 0 };
+      if (encodedMeta) {
+        try {
+          meta = JSON.parse(decodeURIComponent(encodedMeta));
+        } catch (_) {}
+      }
+
+      recentDecisions = [
+        {
+          id: `${reqId}-${Date.now()}`,
+          name: meta.name,
+          kind: meta.kind,
+          amount: meta.amount,
+          approved: Boolean(ok),
+          decidedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        },
+        ...recentDecisions
+      ].slice(0, 15);
+
+      showToast(ok ? "✓ Approved" : "✕ Disapproved");
       await refreshHostDashboard(false);
     };
 
