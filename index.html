@@ -2486,18 +2486,29 @@
       try {
         const [
           { data: st },
-          { data: reqs },
+          { data: reqsDirect, error: reqErr },
+          { data: reqsRpc },
           { data: plist }
         ] = await Promise.all([
           sb.rpc("stats"),
           sb.from("requests").select("*").eq("status", "PENDING").order("created_at", { ascending: true }),
+          sb.rpc("pending_requests").catch(() => ({ data: null })),
           sb.rpc("players")
         ]);
 
         const playerMap = new Map();
         (plist || []).forEach((p) => playerMap.set(p.user_id, p));
 
-        const pending = reqs || [];
+        let pending = Array.isArray(reqsDirect) && reqsDirect.length > 0 ? reqsDirect : (reqsDirect || []);
+        if ((!pending || pending.length === 0) && Array.isArray(reqsRpc) && reqsRpc.length > 0) {
+          pending = reqsRpc;
+        }
+        if (reqErr && (!pending || pending.length === 0)) {
+          const { data: allReqs } = await sb.from("requests").select("*").order("created_at", { ascending: true });
+          if (Array.isArray(allReqs)) {
+            pending = allReqs.filter((r) => String(r.status || "").toUpperCase() === "PENDING");
+          }
+        }
         const pendingCount = st && typeof st.pending_requests === "number"
           ? st.pending_requests
           : pending.length;
