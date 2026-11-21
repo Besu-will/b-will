@@ -193,7 +193,7 @@
       background: #0e193d;
       border: 2px solid var(--border);
       border-radius: 999px;
-      padding: 4px 12px 4px 6px;
+      padding: 4px 8px 4px 6px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -211,6 +211,38 @@
       justify-content: center;
       color: #5c3d00;
       font-size: 11px;
+    }
+    .bal-refresh-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: #1b2e6b;
+      color: var(--muted);
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .bal-refresh-btn:active {
+      transform: scale(0.92);
+      color: #fff;
+      border-color: var(--yellow);
+    }
+    .bal-refresh-btn.spinning {
+      animation: spin360 0.55s linear infinite;
+      color: var(--yellow);
+      border-color: var(--yellow);
+    }
+    @keyframes spin360 {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
     .menu-btn {
       width: 38px;
@@ -356,10 +388,13 @@
       will-change: transform;
     }
 
-    /* Wheel Reveal Container (replaces grid + timer in same spot) */
+    /* Wheel Reveal Container (fills space between status strip and bet slots) */
     .wheel-stage {
+      flex: 1;
+      min-height: 0;
       height: 100%;
-      max-height: 178px;
+      max-height: 260px;
+      padding: 2px 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -367,7 +402,8 @@
     }
     .wheel-stage svg {
       height: 100%;
-      max-height: 174px;
+      max-height: 256px;
+      max-width: 100%;
       width: auto;
       aspect-ratio: 1 / 1;
       overflow: visible;
@@ -705,12 +741,22 @@
       box-shadow: 0 3px 0 #061819;
       cursor: pointer;
       position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .h-btn:active { transform: translateY(2px); }
     .h-btn-accent {
       background: var(--h-accent);
       color: #052120;
       border-color: #9bf5e6;
+    }
+    .h-btn-icon {
+      min-width: 40px;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 16px;
+      line-height: 1;
     }
     .red-dot {
       position: absolute;
@@ -791,65 +837,38 @@
       flex-direction: column;
       gap: 8px;
     }
-    .req-head {
+    .req-main-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-      font-size: 14px;
+      justify-content: space-between;
+      gap: 10px;
     }
-    .req-details {
-      border-top: 1px solid var(--h-border);
-      padding-top: 8px;
+    .req-info {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      font-size: 13px;
+      gap: 2px;
+      min-width: 0;
+    }
+    .req-player-line {
+      font-size: 14px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .req-meta-line {
+      font-size: 12px;
       color: var(--h-muted);
     }
     .req-btns {
       display: flex;
+      align-items: center;
       gap: 8px;
-    }
-    .player-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      background: #082223;
-      border: 1px solid var(--h-border);
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-size: 13px;
-    }
-    .player-adj {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .player-adj input {
-      width: 76px;
-      background: #051617;
-      border: 1px solid var(--h-border);
-      border-radius: 8px;
-      color: #fff;
-      padding: 5px 7px;
-      font-size: 13px;
-      text-align: center;
-    }
-    .round-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      padding: 6px 8px;
-      background: #082223;
-      border-radius: 10px;
-      border: 1px solid var(--h-border);
+      flex-shrink: 0;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .btn3d, .num-tile, .h-btn { transition: none !important; }
+      .btn3d, .num-tile, .h-btn, .bal-refresh-btn { transition: none !important; animation: none !important; }
     }
   </style>
 </head>
@@ -895,6 +914,7 @@
         <div class="coin-pill" id="balance-pill">
           <span class="coin-icon">$</span>
           <span id="balance-val">0</span>
+          <button id="btn-refresh-bal" class="bal-refresh-btn" type="button" aria-label="Refresh balance" title="Refresh balance">↻</button>
         </div>
         <button id="btn-menu" class="btn3d menu-btn" type="button" aria-label="Menu">☰</button>
       </div>
@@ -1060,24 +1080,6 @@
         <div class="h-sec-title" style="margin-top:6px;"><span>Withdrawal requests</span></div>
         <div id="h-withdraw-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
-
-      <!-- Players sorted lowest balance first -->
-      <div class="h-card">
-        <div class="h-sec-title"><span>Players (lowest balance first)</span></div>
-        <div id="h-players-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <!-- Recent rounds -->
-      <div class="h-card">
-        <div class="h-sec-title"><span>Recent rounds</span></div>
-        <div id="h-rounds-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      </div>
-
-      <!-- Recent activity log -->
-      <div class="h-card">
-        <div class="h-sec-title"><span>Recent activity</span></div>
-        <div id="h-activity-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-      </div>
     </div>
   </div>
 
@@ -1128,7 +1130,8 @@
     let lastPhase = null; // "BETTING" | "REVEAL"
     let roundBets = [];
     let settledRoundCache = {}; // roundId -> round row
-    let historyList = []; // last 10 winning numbers today, newest first
+    let historyList = []; // last 10 winning numbers, newest first
+    let lastHistoryRoundId = null;
     let liveSheetOpen = false;
     let autoTriggeredForRound = null;
 
@@ -1146,7 +1149,6 @@
     // Host state
     let hostPollTimer = null;
     let knownPendingIds = new Set();
-    let expandedReqIds = new Set();
 
     // Helpers
     const $ = (id) => document.getElementById(id);
@@ -1303,7 +1305,7 @@
     }
 
     // =========================================================================
-    // BALANCE COUNTER ANIMATION
+    // BALANCE COUNTER ANIMATION & MANUAL REFRESH
     // =========================================================================
     function setBalanceTarget(newBal, immediate = false) {
       actualBalance = Number(newBal) || 0;
@@ -1338,6 +1340,27 @@
         }
       }
       balanceAnimId = requestAnimationFrame(step);
+    }
+
+    async function manualRefreshBalance() {
+      if (!currentUser || !sb) return;
+      haptic(10);
+      const btn = $("btn-refresh-bal");
+      btn.classList.add("spinning");
+      try {
+        const { data, error } = await sb
+          .from("wallets")
+          .select("balance")
+          .eq("user_id", currentUser.id)
+          .single();
+        if (!error && data && typeof data.balance === "number") {
+          actualBalance = Number(data.balance) || 0;
+          holdBalanceUntilWheelLands = false;
+          animateBalanceTo(actualBalance, false);
+        }
+      } finally {
+        setTimeout(() => btn.classList.remove("spinning"), 350);
+      }
     }
 
     // =========================================================================
@@ -1488,7 +1511,7 @@
         settledRoundCache[firstTick.round.id] = firstTick.round;
       }
 
-      await fetchTodayHistory();
+      await fetchRecentHistory();
       setupRealtimeSubscriptions();
 
       requestAnimationFrame(gameLoop);
@@ -1582,6 +1605,8 @@
     }
 
     function wirePlayerEvents() {
+      $("btn-refresh-bal").addEventListener("click", manualRefreshBalance);
+
       $("tab-bet").addEventListener("click", () => {
         haptic();
         betMode = "bet";
@@ -1903,19 +1928,31 @@
       updateSlotButtons();
     }
 
-    async function fetchTodayHistory() {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const { data } = await sb
+    async function fetchRecentHistory() {
+      const { data, error } = await sb
         .from("rounds")
         .select("id, winning_number")
         .eq("status", "SETTLED")
-        .gte("settled_at", startOfDay.toISOString())
         .not("winning_number", "is", null)
         .order("id", { ascending: false })
         .limit(10);
 
-      historyList = (data || []).map((r) => r.winning_number);
+      if (!error && data) {
+        historyList = data.map((r) => Number(r.winning_number));
+        if (data.length > 0) {
+          lastHistoryRoundId = Number(data[0].id);
+        }
+        renderHistoryStrip();
+      }
+    }
+
+    function recordWinnerInHistory(roundId, winNum) {
+      const rid = Number(roundId);
+      const num = Number(winNum);
+      if (!(num >= 1 && num <= 10)) return;
+      if (lastHistoryRoundId !== null && rid <= lastHistoryRoundId) return;
+      lastHistoryRoundId = rid;
+      historyList = [num, ...historyList].slice(0, 10);
       renderHistoryStrip();
     }
 
@@ -2108,7 +2145,7 @@
         }
         const { data } = await sb.rpc("tick");
         if (data && data.round && data.round.status === "SETTLED") {
-          settledRoundCache[roundId] = data.round;
+          settledRoundCache[data.round.id] = data.round;
           clearInterval(tickRetryTimer);
         }
       };
@@ -2167,8 +2204,7 @@
       $("status-text").className = "st-win";
       $("status-text").textContent = `WINNER: #${winNum}`;
 
-      historyList = [winNum, ...historyList].slice(0, 10);
-      renderHistoryStrip();
+      recordWinnerInHistory(roundRow.id, winNum);
 
       holdBalanceUntilWheelLands = false;
       sb.from("wallets").select("balance").eq("user_id", currentUser.id).single().then(({ data }) => {
@@ -2295,16 +2331,12 @@
           { data: st },
           { data: cfg },
           { data: reqs },
-          { data: plist },
-          { data: rounds },
-          { data: act }
+          { data: plist }
         ] = await Promise.all([
           sb.rpc("stats"),
           sb.from("config").select("bots").eq("id", 1).single(),
           sb.from("requests").select("*").eq("status", "PENDING").order("created_at", { ascending: true }),
-          sb.rpc("players"),
-          sb.from("rounds").select("*").eq("status", "SETTLED").order("id", { ascending: false }).limit(15),
-          sb.rpc("admin_activity_log")
+          sb.rpc("players")
         ]);
 
         if (cfg) renderBotsButton(Boolean(cfg.bots));
@@ -2365,33 +2397,6 @@
 
         renderRequestGroup("h-topup-list", pending.filter((r) => r.kind === "TOPUP"), playerMap);
         renderRequestGroup("h-withdraw-list", pending.filter((r) => r.kind === "WITHDRAW"), playerMap);
-
-        $("h-players-list").innerHTML = (plist || []).map((p) => `
-          <div class="player-row">
-            <div>
-              <div>${esc(p.username)}</div>
-              <div style="color:var(--h-accent);font-size:12px;">Balance: ${Number(p.balance)}</div>
-            </div>
-            <div class="player-adj">
-              <input type="number" id="adj-in-${p.user_id}" placeholder="+/-" />
-              <button class="h-btn h-btn-accent" type="button" onclick="hostGiveCoins('${p.user_id}')">Apply</button>
-            </div>
-          </div>
-        `).join("") || `<div style="font-size:12px;color:var(--h-muted);">No players yet.</div>`;
-
-        $("h-rounds-list").innerHTML = (rounds || []).map((r) => `
-          <div class="round-row">
-            <span>#${r.id} (Win: #${r.winning_number ?? "-"}) ${r.dead ? "[DEAD]" : ""}</span>
-            <span>Pot ${r.total} | Paid ${r.payout} | Cut ${r.house_cut}</span>
-          </div>
-        `).join("") || `<div style="font-size:12px;color:var(--h-muted);">No settled rounds yet.</div>`;
-
-        $("h-activity-list").innerHTML = (act || []).map((a) => `
-          <div class="round-row">
-            <span>${esc(a.username)} (${a.kind})</span>
-            <span>${a.amount >= 0 ? "+" + a.amount : a.amount} → ${a.balance_after}</span>
-          </div>
-        `).join("") || `<div style="font-size:12px;color:var(--h-muted);">No activity yet.</div>`;
       } catch (err) {
         console.error(err);
       }
@@ -2404,35 +2409,25 @@
         return;
       }
       el.innerHTML = items.map((r) => {
-        const expanded = expandedReqIds.has(r.id);
         const pInfo = playerMap.get(r.user_id);
         const curBal = pInfo ? Number(pInfo.balance) : 0;
         const timeStr = new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         return `
           <div class="req-card">
-            <div class="req-head" onclick="toggleReqExpand(${r.id})">
-              <span>${esc(r.name)}</span>
-              <span style="color:var(--h-accent);">${Number(r.amount)} coins ${expanded ? "▲" : "▼"}</span>
-            </div>
-            ${expanded ? `
-              <div class="req-details">
-                <div>Type: ${r.kind} | Current balance: ${curBal} | Sent: ${timeStr}</div>
-                <div class="req-btns">
-                  <button class="h-btn h-btn-accent" style="flex:1;" type="button" onclick="hostDecideReq(${r.id}, true)">Approve</button>
-                  <button class="h-btn" style="flex:1;background:#6b1d24;border-color:#a8323c;" type="button" onclick="hostDecideReq(${r.id}, false)">Decline</button>
-                </div>
+            <div class="req-main-row">
+              <div class="req-info">
+                <div class="req-player-line">${esc(r.name)} · <span style="color:var(--h-accent);">${Number(r.amount)} coins</span></div>
+                <div class="req-meta-line">Bal: ${curBal} · ${timeStr}</div>
               </div>
-            ` : ""}
+              <div class="req-btns">
+                <button class="h-btn h-btn-accent h-btn-icon" type="button" aria-label="Approve" title="Approve" onclick="hostDecideReq(${r.id}, true)">✓</button>
+                <button class="h-btn h-btn-icon" style="background:#6b1d24;border-color:#a8323c;" type="button" aria-label="Decline" title="Decline" onclick="hostDecideReq(${r.id}, false)">✕</button>
+              </div>
+            </div>
           </div>
         `;
       }).join("");
     }
-
-    window.toggleReqExpand = function(reqId) {
-      if (expandedReqIds.has(reqId)) expandedReqIds.delete(reqId);
-      else expandedReqIds.add(reqId);
-      refreshHostDashboard(false);
-    };
 
     window.hostDecideReq = async function(reqId, ok) {
       haptic();
@@ -2441,26 +2436,7 @@
         showToast(error.message);
         return;
       }
-      expandedReqIds.delete(reqId);
-      showToast(ok ? "Request approved" : "Request declined");
-      await refreshHostDashboard(false);
-    };
-
-    window.hostGiveCoins = async function(userId) {
-      haptic();
-      const inp = $(`adj-in-${userId}`);
-      const delta = parseInt(inp.value, 10);
-      if (!delta || delta === 0) {
-        showToast("Enter a non-zero number");
-        return;
-      }
-      const { error } = await sb.rpc("give_coins", { p_target_user_id: userId, p_delta: delta });
-      if (error) {
-        showToast(error.message);
-        return;
-      }
-      inp.value = "";
-      showToast("Balance updated");
+      showToast(ok ? "Approved" : "Declined");
       await refreshHostDashboard(false);
     };
 
