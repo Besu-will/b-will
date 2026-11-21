@@ -697,7 +697,7 @@
       width: 100%;
       min-height: 100dvh;
       background: linear-gradient(180deg, var(--h-bg-top) 0%, var(--h-bg-bot) 100%);
-      padding: calc(12px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+      padding: calc(12px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -705,6 +705,13 @@
     .host-container {
       width: 100%;
       max-width: 680px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .host-main-stack {
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -718,7 +725,6 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      flex-wrap: wrap;
     }
     .host-title {
       font-size: 20px;
@@ -728,6 +734,21 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    .host-bottom-bar {
+      background: var(--h-card);
+      border: 2px solid var(--h-border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+    }
+    .host-bottom-bar .h-btn {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
     }
     .h-btn {
       background: #144948;
@@ -752,10 +773,10 @@
       border-color: #9bf5e6;
     }
     .h-btn-icon {
-      min-width: 40px;
-      height: 34px;
+      min-width: 44px;
+      height: 36px;
       padding: 0 12px;
-      font-size: 16px;
+      font-size: 17px;
       line-height: 1;
     }
     .red-dot {
@@ -846,7 +867,7 @@
     .req-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       min-width: 0;
     }
     .req-player-line {
@@ -1031,54 +1052,60 @@
   <!-- 7. HOST PAGE -->
   <div id="host-screen" class="hidden">
     <div class="host-container">
-      <div class="host-topbar">
-        <div class="host-title">B-Will Host</div>
-        <div class="host-actions">
-          <button id="h-btn-req-jump" class="h-btn" type="button">
-            Requests
-            <span id="h-req-dot" class="red-dot hidden"></span>
-          </button>
-          <button id="h-btn-copy" class="h-btn h-btn-accent" type="button">Copy game link</button>
-          <button id="h-btn-signout" class="h-btn" type="button">Sign out</button>
+      <div class="host-main-stack">
+        <!-- Top Header -->
+        <div class="host-topbar">
+          <div class="host-title">B-Will Host</div>
+          <div class="host-actions">
+            <button id="h-btn-req-view" class="h-btn" type="button">
+              Requests
+              <span id="h-req-dot" class="red-dot hidden"></span>
+            </button>
+            <button id="h-btn-back-dash" class="h-btn h-btn-accent hidden" type="button">← Dashboard</button>
+          </div>
+        </div>
+
+        <!-- VIEW 1: DASHBOARD OVERVIEW -->
+        <div id="host-dashboard-view" style="display:flex;flex-direction:column;gap:14px;">
+          <div class="host-summary">
+            <div class="h-tile">
+              <div id="h-sum-profit" class="h-tile-val">0</div>
+              <div class="h-tile-lbl">House profit today</div>
+            </div>
+            <div class="h-tile">
+              <div id="h-sum-players" class="h-tile-val">0</div>
+              <div class="h-tile-lbl">Players</div>
+            </div>
+            <div class="h-tile">
+              <div id="h-sum-pending" class="h-tile-val">0</div>
+              <div class="h-tile-lbl">Pending requests</div>
+            </div>
+          </div>
+
+          <div class="h-card">
+            <div class="h-sec-title"><span>Today's Dashboard</span></div>
+            <div id="h-bars"></div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: REQUESTS PAGE (Top-up & Withdrawal Approval / Disapproval) -->
+        <div id="host-requests-view" class="hidden" style="display:flex;flex-direction:column;gap:14px;">
+          <div class="h-card">
+            <div class="h-sec-title"><span>Top-up requests</span></div>
+            <div id="h-topup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+
+          <div class="h-card">
+            <div class="h-sec-title"><span>Withdrawal requests</span></div>
+            <div id="h-withdraw-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
         </div>
       </div>
 
-      <div class="host-summary">
-        <div class="h-tile">
-          <div id="h-sum-profit" class="h-tile-val">0</div>
-          <div class="h-tile-lbl">House profit today</div>
-        </div>
-        <div class="h-tile">
-          <div id="h-sum-players" class="h-tile-val">0</div>
-          <div class="h-tile-lbl">Players</div>
-        </div>
-        <div class="h-tile">
-          <div id="h-sum-pending" class="h-tile-val">0</div>
-          <div class="h-tile-lbl">Pending requests</div>
-        </div>
-      </div>
-
-      <!-- Bots toggle -->
-      <div class="h-card" style="flex-direction:row;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:14px;">Simulated practice players</div>
-          <div style="font-size:12px;color:var(--h-muted);">Adds 4–8 practice bets per round</div>
-        </div>
-        <button id="h-btn-bots" class="h-btn" type="button">OFF</button>
-      </div>
-
-      <!-- Dashboard bars -->
-      <div class="h-card">
-        <div class="h-sec-title"><span>Today's Dashboard</span></div>
-        <div id="h-bars"></div>
-      </div>
-
-      <!-- Pending Requests -->
-      <div class="h-card" id="h-requests-section">
-        <div class="h-sec-title"><span>Top-up requests</span></div>
-        <div id="h-topup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-        <div class="h-sec-title" style="margin-top:6px;"><span>Withdrawal requests</span></div>
-        <div id="h-withdraw-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <!-- Bottom Actions (Copy game link & Sign out) -->
+      <div class="host-bottom-bar">
+        <button id="h-btn-copy" class="h-btn h-btn-accent" type="button">Copy game link</button>
+        <button id="h-btn-signout" class="h-btn" type="button">Sign out</button>
       </div>
     </div>
   </div>
@@ -1149,6 +1176,7 @@
     // Host state
     let hostPollTimer = null;
     let knownPendingIds = new Set();
+    let hostActiveView = "dashboard"; // "dashboard" | "requests"
 
     // Helpers
     const $ = (id) => document.getElementById(id);
@@ -2274,8 +2302,19 @@
     // =========================================================================
     // 7. HOST PAGE LOGIC
     // =========================================================================
+    function setHostView(view) {
+      hostActiveView = view;
+      const isReqView = view === "requests";
+      $("host-dashboard-view").classList.toggle("hidden", isReqView);
+      $("host-requests-view").classList.toggle("hidden", !isReqView);
+      $("h-btn-req-view").classList.toggle("hidden", isReqView);
+      $("h-btn-back-dash").classList.toggle("hidden", !isReqView);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     async function startHostApp() {
       showOnlyScreen("host-screen");
+      setHostView("dashboard");
 
       $("h-btn-signout").addEventListener("click", async () => {
         await sb.auth.signOut();
@@ -2292,19 +2331,16 @@
         }
       });
 
-      $("h-btn-req-jump").addEventListener("click", () => {
-        $("h-requests-section").scrollIntoView({ behavior: "smooth" });
+      $("h-btn-req-view").addEventListener("click", () => {
+        haptic();
+        setHostView("requests");
+        refreshHostDashboard(false);
       });
 
-      $("h-btn-bots").addEventListener("click", async () => {
+      $("h-btn-back-dash").addEventListener("click", () => {
         haptic();
-        const curOn = $("h-btn-bots").dataset.on === "true";
-        const { data, error } = await sb.rpc("set_bots", { p_enabled: !curOn });
-        if (error) {
-          showToast(error.message);
-          return;
-        }
-        renderBotsButton(Boolean(data));
+        setHostView("dashboard");
+        refreshHostDashboard(false);
       });
 
       await refreshHostDashboard(true);
@@ -2318,37 +2354,31 @@
       hostPollTimer = setInterval(() => refreshHostDashboard(false), 8000);
     }
 
-    function renderBotsButton(isOn) {
-      const btn = $("h-btn-bots");
-      btn.dataset.on = isOn ? "true" : "false";
-      btn.textContent = isOn ? "ON" : "OFF";
-      btn.classList.toggle("h-btn-accent", isOn);
-    }
-
     async function refreshHostDashboard(isInitial) {
       try {
         const [
           { data: st },
-          { data: cfg },
           { data: reqs },
           { data: plist }
         ] = await Promise.all([
           sb.rpc("stats"),
-          sb.from("config").select("bots").eq("id", 1).single(),
           sb.from("requests").select("*").eq("status", "PENDING").order("created_at", { ascending: true }),
           sb.rpc("players")
         ]);
 
-        if (cfg) renderBotsButton(Boolean(cfg.bots));
-
         const playerMap = new Map();
         (plist || []).forEach((p) => playerMap.set(p.user_id, p));
+
+        const pending = reqs || [];
+        const pendingCount = st && typeof st.pending_requests === "number"
+          ? st.pending_requests
+          : pending.length;
 
         if (st) {
           $("h-sum-profit").textContent = String(st.house_profit ?? 0);
           $("h-sum-players").textContent = String(st.total_players ?? 0);
-          $("h-sum-pending").textContent = String(st.pending_requests ?? 0);
-          $("h-req-dot").classList.toggle("hidden", (st.pending_requests ?? 0) === 0);
+          $("h-sum-pending").textContent = String(pendingCount);
+          $("h-req-dot").classList.toggle("hidden", pendingCount === 0);
 
           const pot = Number(st.total_pot) || 0;
           const profit = Number(st.house_profit) || 0;
@@ -2382,7 +2412,6 @@
           `).join("");
         }
 
-        const pending = reqs || [];
         let hasNew = false;
         pending.forEach((r) => {
           if (!knownPendingIds.has(r.id)) {
