@@ -314,6 +314,9 @@
     if(session?.user && !user){user=session.user;enterApp();}
     if(!session){user=null;showApp(false);if(pollTimer)clearInterval(pollTimer);}
   });
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(error => console.warn("Service worker:", error));
+  }
 })();
 </script>
 </body>
