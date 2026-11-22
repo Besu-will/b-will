@@ -110,7 +110,7 @@
   const $ = id => document.getElementById(id);
   const colors = {green:"#24bd83",orange:"#f19a42",blue:"#568af6"};
   let user = null, state = null, balance = 0, selected = {1:null,2:null}, placed = {1:null,2:null};
-  let pollBusy = false, pollTimer = null, timerTimer = null, roundEnd = 0, roundStart = 0;
+  let pollBusy = false, pollTimer = null, timerTimer = null, roundEnd = 0, roundStart = 0, activeRoundId = null;
 
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const fmt = n => Number(n || 0).toLocaleString();
@@ -158,6 +158,11 @@
       $("username-label").textContent=data.username||"Player";
       const round=data.round;
       if (round) {
+        if (activeRoundId !== Number(round.id)) {
+          activeRoundId = Number(round.id);
+          placed = {1:null,2:null};
+          selected = {1:null,2:null};
+        }
         roundEnd=new Date(round.closes_at).getTime();
         roundStart=new Date(round.starts_at).getTime();
         $("round-id").textContent="Round #"+round.id;
