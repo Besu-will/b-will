@@ -45,7 +45,7 @@ input,select,textarea{background:#0b1423;border:1px solid #354660;border-radius:
 <header class="topbar">
   <div class="brand"><div class="brand-mark">B</div><span>B-Will</span></div>
   <div class="topbar-right">
-    <div class="balance-chip"><span>Total Balance</span><strong id="header-balance">1,000</strong><span id="header-available">Available 1,000</span></div>
+    <div id="balance-chip" class="balance-chip"><span>Total Balance</span><strong id="header-balance">1,000</strong><span id="header-available">Available 1,000</span></div>
     <button id="host-switch" class="btn subtle mode-btn hidden">Host view</button><button id="sign-out" class="btn ghost tiny">Sign out</button>
   </div>
 </header>
@@ -200,7 +200,7 @@ input,select,textarea{background:#0b1423;border:1px solid #354660;border-radius:
     finally{entering=false;}
   }
   function switchMode(next){
-    mode=next;const host=next==="host";$("player-app").classList.toggle("hidden",host);$("host-app").classList.toggle("hidden",!host);
+    mode=next;const host=next==="host";$("player-app").classList.toggle("hidden",host);$("host-app").classList.toggle("hidden",!host);$("balance-chip").classList.toggle("hidden",host);
     $("host-switch").textContent=host?"Player view":"Host view";
     if(host){setActiveHostPage(["dashboard","history","balances","requests","profile"].includes(activePage)?activePage:"dashboard");loadHostDashboard();if(hostPollTimer)clearInterval(hostPollTimer);hostPollTimer=setInterval(loadHostDashboard,1800);}
     else{if(hostPollTimer)clearInterval(hostPollTimer);setActivePlayerPage(["game","history","balance","requests","profile"].includes(activePage)?activePage:"game");renderGame();}
@@ -230,7 +230,7 @@ input,select,textarea{background:#0b1423;border:1px solid #354660;border-radius:
       if(currentRoundId!==nextId){currentRoundId=nextId;selectedColors={1:null,2:null};placedBets={1:null,2:null};activeSlot=1;resetWheel();}
       else if(currentPhase==="open"&&nextPhase==="revealing"&&round.winner_color)spinWheel(round.winner_color);
       currentPhase=nextPhase;placedBets={1:null,2:null};(data.my_bets||[]).forEach(b=>{placedBets[Number(b.slot_index)]=b;});
-      updateBalanceUI();renderGame();await loadLiveBets(nextId);await renderResults(data);if(mode==="host")loadHostDashboard();
+      updateBalanceUI();renderGame();await loadLiveBets(nextId);await renderResults(data);
     }catch(e){console.error(e);if(!state)toast(e.message||"Unable to load game state.","error");}
     finally{pollBusy=false;}
   }
