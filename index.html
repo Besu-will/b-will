@@ -1,2795 +1,448 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#101b42" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.json" />
-  <title>B-Will</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-  <style>
-    :root {
-      --bg-top: #1d2f66;
-      --bg-bot: #101b42;
-      --header-bg: #16255a;
-      --border: #2a3f87;
-      --btn-bg: #243d88;
-      --btn-shadow: #13214d;
-      --yellow: #ffc933;
-      --yellow-shadow: #b8890a;
-      --green: #82e05a;
-      --green-shadow: #4a962b;
-      --red: #ff4d5a;
-      --muted: #9aa9d8;
-      --text: #ffffff;
-      --card-bg: rgba(22, 37, 90, 0.78);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    input {
-      user-select: text;
-      font-family: "Trebuchet MS", Helvetica, Arial, sans-serif;
-      font-weight: 700;
-    }
-
-    body {
-      font-family: "Trebuchet MS", Helvetica, Arial, sans-serif;
-      font-weight: 700;
-      color: var(--text);
-      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 100%);
-      min-height: 100dvh;
-      display: flex;
-      justify-content: center;
-      overflow-x: hidden;
-    }
-
-    .hidden { display: none !important; }
-
-    /* Shared 3D Raised Button */
-    .btn3d {
-      border: 2px solid var(--border);
-      background: var(--btn-bg);
-      color: #fff;
-      font-family: inherit;
-      font-weight: 700;
-      border-radius: 14px;
-      box-shadow: 0 4px 0 var(--btn-shadow);
-      cursor: pointer;
-      transition: transform 0.06s ease, filter 0.06s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    .btn3d:active:not(:disabled) {
-      transform: translateY(2px) scale(0.98);
-      filter: brightness(1.08);
-      box-shadow: 0 2px 0 var(--btn-shadow);
-    }
-    .btn3d:disabled {
-      cursor: not-allowed;
-      opacity: 0.72;
-    }
-    .btn-green {
-      background: var(--green);
-      color: #0e2408;
-      border-color: #9ff07a;
-      box-shadow: 0 4px 0 var(--green-shadow);
-    }
-    .btn-green:active:not(:disabled) { box-shadow: 0 2px 0 var(--green-shadow); }
-    .btn-yellow {
-      background: var(--yellow);
-      color: #2b1d00;
-      border-color: #ffe07d;
-      box-shadow: 0 4px 0 var(--yellow-shadow);
-    }
-    .btn-yellow:active:not(:disabled) { box-shadow: 0 2px 0 var(--yellow-shadow); }
-    .btn-red {
-      background: var(--red);
-      color: #fff;
-      border-color: #ff858e;
-      box-shadow: 0 4px 0 #9e1c26;
-    }
-
-    /* AUTH & USERNAME SCREENS */
-    .center-screen {
-      width: 100%;
-      max-width: 560px;
-      height: 100dvh;
-      padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .auth-card {
-      width: 100%;
-      max-width: 400px;
-      background: var(--header-bg);
-      border: 2px solid var(--border);
-      border-radius: 20px;
-      padding: 24px 20px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .logo-title {
-      font-size: 32px;
-      letter-spacing: 0.5px;
-      text-align: center;
-    }
-    .logo-title span { color: var(--yellow); }
-    .field-input {
-      width: 100%;
-      background: #0e193d;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
-      color: #fff;
-      font-size: 16px;
-      outline: none;
-    }
-    .field-input:focus { border-color: var(--yellow); }
-    .auth-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .auth-actions .btn3d { padding: 12px; font-size: 15px; }
-    .msg-line {
-      min-height: 20px;
-      font-size: 13px;
-      text-align: center;
-      color: var(--muted);
-      line-height: 1.3;
-    }
-    .msg-line.err { color: var(--red); }
-    .msg-line.ok { color: var(--green); }
-
-    /* PLAYER APP SHELL (STRICT 100dvh, ZERO SCROLL) */
-    #player-screen {
-      width: 100%;
-      max-width: 560px;
-      height: 100dvh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
-      position: relative;
-    }
-
-    /* a) Header */
-    .p-header {
-      background: var(--header-bg);
-      border-bottom: 2px solid var(--border);
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .brand {
-      font-size: 22px;
-      letter-spacing: 0.4px;
-    }
-    .brand span { color: var(--yellow); }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .coin-pill {
-      background: #0e193d;
-      border: 2px solid var(--border);
-      border-radius: 999px;
-      padding: 4px 8px 4px 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 15px;
-      color: var(--yellow);
-    }
-    .coin-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #ffe680, #f0a800);
-      border: 2px solid #9e6b00;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #5c3d00;
-      font-size: 11px;
-    }
-    .bal-refresh-btn {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      background: #1b2e6b;
-      color: var(--muted);
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 13px;
-      line-height: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      padding: 0;
-      transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-    }
-    .bal-refresh-btn:active {
-      transform: scale(0.92);
-      color: #fff;
-      border-color: var(--yellow);
-    }
-    .bal-refresh-btn.spinning {
-      animation: spin360 0.55s linear infinite;
-      color: var(--yellow);
-      border-color: var(--yellow);
-    }
-    @keyframes spin360 {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .menu-btn {
-      width: 38px;
-      height: 34px;
-      font-size: 18px;
-      border-radius: 12px;
-    }
-
-    /* Main play column */
-    .p-body {
-      flex: 1;
-      min-height: 0;
-      padding: 8px 12px 6px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    /* b) History strip */
-    .history-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    .hist-dot {
-      width: 26px;
-      height: 26px;
-      max-width: 26px;
-      max-height: 26px;
-      border-radius: 50%;
-      background: #0f1b44;
-      border: 2px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #131c3d;
-      flex-shrink: 1;
-    }
-    .hist-dot.empty {
-      color: transparent;
-    }
-
-    /* c) Status strip */
-    .status-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(14, 25, 61, 0.65);
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 6px 12px;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-    .st-open { color: var(--green); }
-    .st-draw { color: var(--muted); }
-    .st-win { color: var(--yellow); }
-    .pot-label { color: #fff; }
-
-    /* d + e) Stage area (Grid + Timer OR Wheel) */
-    .stage-wrap {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 6px;
-    }
-    .num-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 7px;
-      height: 100%;
-      max-height: 158px;
-    }
-    .num-tile {
-      background: var(--header-bg);
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 3px 0 #0d1638;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 3px 2px;
-      cursor: pointer;
-      transition: transform 0.06s ease, border-color 0.1s ease, box-shadow 0.1s ease;
-    }
-    .num-tile:active { transform: scale(0.96); }
-    .num-tile.selected {
-      border-color: var(--green);
-      box-shadow: 0 0 10px rgba(130, 224, 90, 0.75), 0 3px 0 #2c6617;
-    }
-    .tile-num {
-      font-size: 20px;
-      line-height: 1.05;
-      color: #fff;
-    }
-    .tile-mult {
-      font-size: 11px;
-      color: var(--green);
-      line-height: 1.1;
-      margin-top: 1px;
-    }
-    .tile-dots {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      height: 7px;
-      margin-top: 3px;
-    }
-    .p-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-    .p-dot.mine {
-      background: var(--green);
-    }
-
-    /* e) Timer Bar */
-    .timer-track {
-      width: 100%;
-      height: 14px;
-      background: #0d1638;
-      border: 2px solid var(--border);
-      border-radius: 999px;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .timer-fill {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg, #ff4d5a 0%, #ff9436 35%, #ffc933 68%, #82e05a 100%);
-      transform-origin: left center;
-      will-change: transform;
-    }
-
-    /* Wheel Reveal Container (fills space between status strip and bet slots) */
-    .wheel-stage {
-      flex: 1;
-      min-height: 0;
-      height: 100%;
-      max-height: 260px;
-      padding: 2px 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .wheel-stage svg {
-      height: 100%;
-      max-height: 256px;
-      max-width: 100%;
-      width: auto;
-      aspect-ratio: 1 / 1;
-      overflow: visible;
-    }
-
-    /* f) Bet Panel */
-    .bet-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    .tab-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      background: #0e193d;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 2px;
-      gap: 4px;
-    }
-    .tab-btn {
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 5px 0;
-      border-radius: 11px;
-      cursor: pointer;
-    }
-    .tab-btn.active {
-      background: var(--btn-bg);
-      color: #fff;
-    }
-
-    .slot-box {
-      background: var(--header-bg);
-      border: 2px solid var(--border);
-      border-radius: 16px;
-      padding: 7px 8px;
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: 8px;
-      align-items: stretch;
-    }
-    .slot-left {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 5px;
-    }
-    .stepper-row {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .slot-badge {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #0e193d;
-      border: 2px solid var(--border);
-      color: var(--yellow);
-      font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .step-btn {
-      width: 30px;
-      height: 28px;
-      border-radius: 10px;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-    .stake-input {
-      width: 100%;
-      min-width: 0;
-      height: 28px;
-      background: #0e193d;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      color: #fff;
-      text-align: center;
-      font-size: 14px;
-      outline: none;
-    }
-    .stake-input:disabled, .step-btn:disabled, .chip-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .chips-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-    }
-    .chip-btn {
-      height: 24px;
-      border-radius: 9px;
-      font-size: 11px;
-      padding: 0;
-    }
-    .slot-action-btn {
-      width: 100%;
-      height: 100%;
-      min-height: 56px;
-      border-radius: 14px;
-      font-size: 13px;
-      line-height: 1.2;
-      padding: 4px 6px;
-      word-break: break-word;
-    }
-    .slot-action-btn.state-disabled {
-      background: #1b2e6b;
-      border-color: #2f499c;
-      color: var(--muted);
-      box-shadow: 0 3px 0 #101b42;
-      opacity: 1;
-    }
-    .slot-action-btn.state-closed {
-      background: #2b344d;
-      border-color: #445073;
-      color: #9ba5c2;
-      box-shadow: 0 3px 0 #181e2e;
-      opacity: 1;
-    }
-
-    /* g) Live Bets Bottom Bar & Sheet */
-    .live-bar {
-      background: var(--header-bg);
-      border-top: 2px solid var(--border);
-      padding: 8px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .live-sheet {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: calc(36px + env(safe-area-inset-bottom));
-      max-height: 48dvh;
-      background: #13204f;
-      border-top: 2px solid var(--border);
-      border-radius: 18px 18px 0 0;
-      box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      z-index: 20;
-    }
-    .live-sheet-list {
-      overflow-y: auto;
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .bet-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(14, 25, 61, 0.7);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 6px 10px;
-      font-size: 13px;
-    }
-    .bet-row-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow: hidden;
-    }
-    .bet-num-pill {
-      padding: 1px 7px;
-      border-radius: 8px;
-      color: #131c3d;
-      font-size: 12px;
-      flex-shrink: 0;
-    }
-    .bet-uname {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .bet-row-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .bet-payout { color: var(--green); }
-
-    /* 5. PLAYER MENU DROPDOWN */
-    .menu-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(8, 13, 33, 0.65);
-      z-index: 40;
-      display: flex;
-      justify-content: flex-end;
-      align-items: flex-start;
-      padding: calc(52px + env(safe-area-inset-top)) 12px 12px;
-    }
-    .menu-panel {
-      width: 100%;
-      max-width: 340px;
-      background: var(--header-bg);
-      border: 2px solid var(--border);
-      border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.55);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .menu-top-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 14px;
-    }
-    .menu-box {
-      background: #0e193d;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .menu-box-title {
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .menu-input-row {
-      display: flex;
-      gap: 8px;
-    }
-    .menu-input-row .field-input {
-      padding: 8px 10px;
-      font-size: 14px;
-    }
-    .menu-input-row .btn3d {
-      padding: 0 14px;
-      font-size: 13px;
-      flex-shrink: 0;
-    }
-    .box-msg {
-      min-height: 16px;
-      font-size: 12px;
-      line-height: 1.2;
-    }
-    .box-msg.ok { color: var(--green); }
-    .box-msg.err { color: var(--red); }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      top: calc(54px + env(safe-area-inset-top));
-      left: 50%;
-      transform: translateX(-50%);
-      background: #101b42;
-      border: 2px solid var(--yellow);
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      z-index: 90;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-      max-width: 90vw;
-      text-align: center;
-    }
-
-    /* 7. HOST PAGE (TEAL THEME) */
-    #host-screen {
-      --h-bg-top: #0f3b3a;
-      --h-bg-bot: #081f20;
-      --h-card: #0c2e2e;
-      --h-border: #1d5c5a;
-      --h-accent: #4fe0c8;
-      --h-muted: #8ec9c2;
-
-      width: 100%;
-      min-height: 100dvh;
-      background: linear-gradient(180deg, var(--h-bg-top) 0%, var(--h-bg-bot) 100%);
-      padding: calc(12px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .host-container {
-      width: 100%;
-      max-width: 680px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 14px;
-    }
-    .host-main-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .host-topbar {
-      background: var(--h-card);
-      border: 2px solid var(--h-border);
-      border-radius: 16px;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .host-title {
-      font-size: 20px;
-      color: var(--h-accent);
-    }
-    .host-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .host-bottom-bar {
-      background: var(--h-card);
-      border: 2px solid var(--h-border);
-      border-radius: 16px;
-      padding: 10px 14px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: auto;
-    }
-    .host-bottom-bar .h-btn {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-    }
-    .h-btn {
-      background: #144948;
-      border: 2px solid var(--h-border);
-      color: #fff;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 7px 12px;
-      border-radius: 12px;
-      box-shadow: 0 3px 0 #061819;
-      cursor: pointer;
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .h-btn:active { transform: translateY(2px); }
-    .h-btn-accent {
-      background: var(--h-accent);
-      color: #052120;
-      border-color: #9bf5e6;
-    }
-    .h-btn-icon {
-      min-width: 44px;
-      height: 36px;
-      padding: 0 12px;
-      font-size: 17px;
-      line-height: 1;
-    }
-    .red-dot {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: var(--red);
-      border: 2px solid var(--h-card);
-    }
-    .host-summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .h-tile {
-      background: var(--h-card);
-      border: 2px solid var(--h-border);
-      border-radius: 16px;
-      padding: 12px 10px;
-      text-align: center;
-    }
-    .h-tile-val {
-      font-size: 22px;
-      color: var(--h-accent);
-    }
-    .h-tile-lbl {
-      font-size: 12px;
-      color: var(--h-muted);
-      margin-top: 2px;
-    }
-    .h-card {
-      background: var(--h-card);
-      border: 2px solid var(--h-border);
-      border-radius: 16px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .h-sec-title {
-      font-size: 15px;
-      color: var(--h-accent);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .stat-bar-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 13px;
-    }
-    .stat-bar-head {
-      display: flex;
-      justify-content: space-between;
-      color: #e2faf7;
-    }
-    .stat-bar-track {
-      height: 10px;
-      background: #071b1c;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid var(--h-border);
-    }
-    .stat-bar-fill {
-      height: 100%;
-      background: var(--h-accent);
-      border-radius: 999px;
-    }
-
-    /* Collapsible Host Sections & Decision Signs */
-    .collapsible-header {
-      width: 100%;
-      background: transparent;
-      border: none;
-      color: inherit;
-      font-family: inherit;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      cursor: pointer;
-      padding: 0;
-      text-align: left;
-    }
-    .collapsible-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 15px;
-      color: var(--h-accent);
-    }
-    .count-pill {
-      background: #082223;
-      border: 1px solid var(--h-border);
-      color: #fff;
-      font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 999px;
-    }
-    .count-pill.has-items {
-      background: var(--h-accent);
-      color: #052120;
-      border-color: #9bf5e6;
-    }
-    .chevron-icon {
-      font-size: 13px;
-      color: var(--h-muted);
-      transition: transform 0.2s ease;
-    }
-    .chevron-icon.collapsed {
-      transform: rotate(-90deg);
-    }
-    .collapsible-body {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 2px;
-    }
-    .req-card {
-      background: #082223;
-      border: 1px solid var(--h-border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .req-main-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .req-info {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 0;
-    }
-    .req-player-line {
-      font-size: 14px;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .req-meta-line {
-      font-size: 12px;
-      color: var(--h-muted);
-    }
-    .req-btns {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .decision-sign {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      flex-shrink: 0;
-    }
-    .decision-sign.approved {
-      background: rgba(79, 224, 200, 0.16);
-      border: 1px solid var(--h-accent);
-      color: var(--h-accent);
-    }
-    .decision-sign.disapproved {
-      background: rgba(255, 77, 90, 0.16);
-      border: 1px solid var(--red);
-      color: #ff858e;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .btn3d, .num-tile, .h-btn, .bal-refresh-btn, .chevron-icon { transition: none !important; animation: none !important; }
-    }
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020"><meta name="description" content="B-Will — virtual colour game. Game Balance has no cash value.">
+<link rel="manifest" href="./manifest.json"><title>B-Will</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#080d18;--surface:#111a2b;--surface2:#17243a;--line:#2a3b58;--text:#f3f6fc;--muted:#91a1bb;--gold:#f4c45c;--green:#23bd83;--orange:#f19a42;--blue:#568af6;--red:#ed6877;--radius:18px}
+*{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#1b2b49 0,#0b1220 45%,#080d18 100%);color:var(--text);font:500 14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.hidden{display:none!important}.muted{color:var(--muted)}.small{font-size:12px;color:var(--muted)}.eyebrow{font-size:10px;letter-spacing:1.25px;text-transform:uppercase;color:var(--muted);font-weight:850}
+.btn{border:1px solid #3b4e6d;background:#243653;color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;transition:.15s}.btn:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}.btn.primary{background:var(--gold);border-color:#f8d783;color:#241b09}.btn.ghost{background:transparent}.btn.danger{background:#512c3a;border-color:#784252;color:#ffdce1}.btn.subtle{background:#1b2941;border-color:#344661}.btn.block{width:100%}.btn.tiny{padding:7px 10px;font-size:12px;border-radius:9px}
+input,select,textarea{background:#0b1423;border:1px solid #354660;border-radius:11px;color:var(--text);padding:11px 12px;min-width:0;width:100%;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px #f4c45c20}textarea{resize:vertical;min-height:72px}label{display:block;font-size:12px;color:#b6c3d7;font-weight:700;margin-bottom:6px}.field{margin:12px 0}
+.auth-shell{min-height:100vh;display:grid;place-items:center;padding:20px}.auth-card{width:min(430px,100%);padding:28px;background:linear-gradient(155deg,#192844,#101a2c);border:1px solid #344662;border-radius:24px;box-shadow:0 28px 90px #0008}.brand{display:flex;align-items:center;gap:11px;font-size:23px;font-weight:950}.brand-mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#ffe08b,#c88d32);color:#201809;display:grid;place-items:center;font-weight:1000;font-size:24px}.auth-card h1{font-size:25px;margin:24px 0 4px}.auth-card p{color:var(--muted);font-size:13px;margin:0 0 18px}.auth-actions{display:flex;gap:9px;margin-top:16px}.auth-actions .btn{flex:1}#auth-message{min-height:20px;margin-top:10px;font-size:12px;color:var(--muted)}#auth-message.error{color:#ff9aa7}#auth-message.ok{color:#9be8c6}.auth-note{margin-top:18px;color:#8594ac;font-size:11px;text-align:center}
+.app{width:min(1180px,100%);margin:0 auto;padding:18px 18px 112px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.topbar-right{display:flex;align-items:center;gap:10px}.balance-chip{display:flex;flex-direction:column;align-items:flex-end;background:#17243a;border:1px solid #354764;border-radius:14px;padding:7px 13px;min-width:130px}.balance-chip strong{font-size:19px;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1.15}.balance-chip span{font-size:10px;color:var(--muted)}.mode-btn{white-space:nowrap}.app-shell{min-height:calc(100vh - 110px)}.page{display:none;animation:fadein .18s ease}.page.active{display:block}@keyframes fadein{from{opacity:.6;transform:translateY(3px)}to{opacity:1;transform:none}}
+.panel{background:linear-gradient(155deg,#17243a,#111a2b);border:1px solid var(--line);border-radius:var(--radius);padding:17px;box-shadow:0 18px 48px #0003}.panel h2,.panel h3{margin:0}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.section-heading h2{font-size:18px}.section-heading p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.recent-strip{background:#111b2d;border:1px solid var(--line);border-radius:15px;padding:11px 14px;margin-bottom:14px}.recent-strip-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.recent-strip-head strong{font-size:12px}.recent-strip-content{display:flex;align-items:center;gap:12px;min-width:0}.recent-chips{display:flex;align-items:center;gap:7px;overflow-x:auto;scrollbar-width:none;flex:1;padding:2px 0}.recent-chips::-webkit-scrollbar{display:none}.result-chip{flex:none;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:9px;background:#0c1524;border:1px solid #283a55;font-size:11px;color:#cbd5e5}.result-dot{width:9px;height:9px;border-radius:50%;flex:none}.last-result-mini{display:flex;align-items:center;gap:7px;white-space:nowrap;padding-left:12px;border-left:1px solid var(--line);font-size:11px}.last-result-mini strong{font-size:12px}.expanded-results{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.recent-strip.expanded .expanded-results{display:block}.last-result-full{display:flex;align-items:center;gap:12px;background:#0d1728;border-radius:12px;padding:11px;margin-bottom:10px}.big-dot{width:22px;height:22px;border-radius:50%;flex:none}.fairness{font-size:11px;color:#a9b8ce;overflow-wrap:anywhere}
+.game-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.8fr);gap:15px;align-items:start}.game-main{display:grid;gap:14px}.round-panel{padding:15px 17px}.round-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.round-number{font-size:18px;font-weight:950}.phase-pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 9px;background:#174b3a;color:#a9f3d6;font-size:10px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;margin-top:4px}.phase-pill.revealing{background:#5b421e;color:#ffe0a5}.phase-dot{width:6px;height:6px;border-radius:50%;background:currentColor}.timer-wrap{text-align:right}.timer-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:800}.timer{font-size:27px;font-weight:950;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1.15}.progress{height:6px;background:#0a1322;border-radius:99px;overflow:hidden;margin-top:12px}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .15s linear}
+.wheel-panel{padding:18px}.wheel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}.wheel-head strong{font-size:14px}.wheel-head span{font-size:11px;color:var(--muted)}.wheel-stage{position:relative;width:min(290px,78vw);aspect-ratio:1;margin:10px auto 7px;display:grid;place-items:center}.wheel-pointer{position:absolute;z-index:3;top:-3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:25px solid #ffe08b;filter:drop-shadow(0 3px 4px #0008)}.wheel-svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 10px 18px #0007);transition:transform 2.75s cubic-bezier(.12,.72,.12,1)}.wheel-svg path{stroke:#f5f7ff;stroke-width:3;cursor:pointer;transition:filter .15s,stroke-width .15s}.wheel-svg path:hover{filter:brightness(1.15)}.wheel-svg path.selected{stroke:#fff5be;stroke-width:7;filter:brightness(1.2) drop-shadow(0 0 8px #fff7)}.wheel-svg text{pointer-events:none;fill:#fff;font-weight:950;font-size:13px;letter-spacing:1px;text-anchor:middle;paint-order:stroke;stroke:#0004;stroke-width:2px}.wheel-center{fill:#111d30;stroke:#fff7;stroke-width:3}.wheel-center-label{fill:#f4d27e!important;font-size:14px!important;letter-spacing:1.2px!important}.wheel-hint{text-align:center;color:var(--muted);font-size:11px;min-height:17px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}.slot-card{background:#0d1728;border:1px solid #2b3d59;border-radius:14px;padding:12px;transition:.15s}.slot-card.active{border-color:var(--gold);box-shadow:0 0 0 2px #f4c45c1c}.slot-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.slot-name{font-size:13px;font-weight:950}.slot-status{font-size:10px;color:var(--muted);font-weight:850;letter-spacing:.5px}.slot-selection{display:flex;align-items:center;gap:8px;min-height:25px;margin:8px 0;font-size:12px;color:#d9e2f1}.slot-color-dot{width:11px;height:11px;border-radius:50%;background:#48566d;flex:none}.stake-row{display:flex;gap:7px}.stake-row input{padding:9px 10px;font-weight:800}.stake-row .btn{padding:8px 11px}.stake-chips{display:flex;gap:5px;margin-top:7px}.stake-chip{flex:1;border:1px solid #334660;background:#1a2941;color:#d6dfed;border-radius:8px;padding:5px 2px;font-size:10px;font-weight:850}.slot-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px}.slot-bottom .small{font-size:10px}.game-note{font-size:10px;color:var(--muted);margin-top:12px;text-align:center}
+.side-stack{display:grid;gap:14px}.live-list{display:grid;gap:7px;max-height:370px;overflow:auto}.live-row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0d1728;border:1px solid #263954;border-radius:10px;padding:9px 10px;font-size:12px}.live-left{display:flex;align-items:center;gap:8px;min-width:0}.live-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}.slot-tag{font-size:9px;padding:3px 6px;border-radius:99px;background:#253550;color:#c9d5e8}.empty{padding:20px 10px;text-align:center;color:var(--muted);font-size:12px}.panel-stat{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #293b56}.panel-stat:last-child{border-bottom:0}.panel-stat span{font-size:11px;color:var(--muted)}.panel-stat strong{font-size:13px;font-variant-numeric:tabular-nums}
+.content-panel{padding:18px}.balance-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}.balance-metric{background:#0d1728;border:1px solid #2b3d59;border-radius:13px;padding:13px}.balance-metric span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}.balance-metric strong{display:block;font-size:20px;color:var(--gold);margin-top:3px;font-variant-numeric:tabular-nums}.data-list{display:grid;gap:8px}.data-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0d1728;border:1px solid #263954;border-radius:11px;padding:10px 12px}.data-row-main{min-width:0;display:grid;gap:2px}.data-row-main strong{font-size:12px}.data-row-main span{font-size:10px;color:var(--muted);overflow-wrap:anywhere}.data-row-side{text-align:right;flex:none}.data-row-side strong{font-size:12px;font-variant-numeric:tabular-nums}.amount-positive{color:#8de5bf}.amount-negative{color:#ff9eaa}.status{display:inline-flex;padding:4px 7px;border-radius:99px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;background:#283954;color:#d4deed}.status.pending{background:#57431e;color:#ffdfa2}.status.approved,.status.won{background:#174b3a;color:#a8f1d4}.status.rejected,.status.lost,.status.cancelled{background:#4a2a37;color:#ffc0c8}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.inline-note{background:#0d1728;border:1px solid #2a3c57;border-radius:12px;padding:11px 12px;color:#aebdd2;font-size:11px;margin:12px 0}.requests-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr);gap:14px;align-items:start}
+.navbar{position:fixed;z-index:20;bottom:12px;left:50%;transform:translateX(-50%);width:min(700px,calc(100% - 24px));display:grid;grid-template-columns:repeat(6,1fr);gap:3px;padding:7px;background:#111b2ceF;border:1px solid #354763;border-radius:18px;box-shadow:0 15px 45px #0009;backdrop-filter:blur(18px)}.nav-item{border:0;background:transparent;color:#8f9eb6;border-radius:12px;padding:7px 3px;display:grid;justify-items:center;gap:3px;font-size:9px;font-weight:850}.nav-item .nav-icon{font-size:17px;line-height:1.1}.nav-item.active{background:#263853;color:#ffe09a}.nav-item:hover{color:#fff}
+.leaderboard-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}.leaderboard-podium-card{background:#17243a;border:1px solid #354763;border-radius:14px;padding:13px 8px;text-align:center;min-width:0}.leaderboard-podium-card.first{border-color:#f4c45c;background:#2a2a25}.leaderboard-podium-card .podium-rank{font-size:20px}.leaderboard-podium-card strong{display:block;overflow-wrap:anywhere;margin:6px 0 2px}.leaderboard-podium-card span{font-size:11px;color:var(--muted)}.host-dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.host-stat{background:#0d1728;border:1px solid #2b3d59;border-radius:14px;padding:14px}.host-stat span{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}.host-stat strong{display:block;font-size:22px;margin-top:5px;font-variant-numeric:tabular-nums}.host-round-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.host-round-card strong{font-size:18px}.history-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.history-tab{border:1px solid #354763;background:#17243a;color:#aebbd0;border-radius:9px;padding:7px 10px;font-size:11px;font-weight:850}.history-tab.active{background:#f4c45c;color:#211908;border-color:#f4c45c}.host-request{background:#0d1728;border:1px solid #2b3d59;border-radius:13px;padding:13px;margin-bottom:9px}.host-request-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.host-request-actions{display:flex;gap:7px;margin-top:10px}.host-request-meta{font-size:11px;color:var(--muted);margin-top:5px}.player-balance-card{background:#0d1728;border:1px solid #2b3d59;border-radius:12px;padding:12px;margin-bottom:8px}.player-balance-head{display:flex;justify-content:space-between;gap:10px}.player-balance-head strong{font-size:12px}.player-balance-values{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--muted)}.player-balance-values b{color:#e9eef7;font-size:11px}.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.profile-item{background:#0d1728;border:1px solid #2b3d59;border-radius:12px;padding:13px}.profile-item span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px}.profile-item strong{display:block;font-size:14px;margin-top:4px;overflow-wrap:anywhere}.toast{position:fixed;z-index:50;left:50%;bottom:92px;transform:translateX(-50%);background:#f4c45c;color:#211908;border-radius:12px;padding:11px 15px;font-size:12px;font-weight:900;box-shadow:0 8px 30px #0008;max-width:calc(100% - 28px);text-align:center}.footer-note{text-align:center;color:#73839d;font-size:10px;margin:22px 0 4px}
+@media(max-width:850px){.game-grid{grid-template-columns:1fr}.side-stack{grid-template-columns:1fr 1fr}.side-stack .panel:first-child{grid-column:1/-1}.host-dashboard-grid{grid-template-columns:repeat(2,1fr)}.requests-layout{grid-template-columns:1fr}}
+@media(max-width:560px){.app{padding:12px 11px 105px}.topbar{align-items:flex-start;margin-bottom:13px}.brand{font-size:20px;gap:8px}.brand-mark{width:36px;height:36px;border-radius:12px;font-size:21px}.topbar-right{gap:6px}.balance-chip{min-width:104px;padding:6px 9px;border-radius:12px}.balance-chip strong{font-size:16px}.balance-chip span{font-size:9px}.mode-btn{font-size:10px;padding:8px 9px}.round-panel{padding:12px 14px}.timer{font-size:24px}.round-number{font-size:16px}.panel{padding:13px}.wheel-panel{padding:13px}.wheel-stage{width:min(250px,72vw)}.slots{grid-template-columns:1fr;gap:8px;margin-top:10px}.slot-card{padding:10px}.side-stack{grid-template-columns:1fr}.side-stack .panel:first-child{grid-column:auto}.balance-overview{gap:6px}.balance-metric{padding:9px}.balance-metric strong{font-size:16px}.balance-metric span{font-size:8px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.profile-grid{grid-template-columns:1fr}.host-dashboard-grid{gap:7px}.host-stat{padding:10px}.host-stat strong{font-size:18px}.last-result-mini{padding-left:8px;gap:5px}.recent-strip{padding:9px}.recent-strip-content{gap:7px}.result-chip{padding:5px 7px}.data-row{padding:9px}}
+</style>
 </head>
 <body>
-
-  <!-- LOADING SCREEN -->
-  <div id="loading-screen" class="center-screen">
-    <div class="logo-title">B-<span>Will</span></div>
-    <div id="loading-msg" class="msg-line" style="margin-top:10px;">Connecting…</div>
+<section id="auth-screen" class="auth-shell">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-mark">B</div><span>B-Will</span></div>
+    <h1 id="auth-title">Welcome back</h1><p id="auth-subtitle">Sign in to continue to B-Will.</p>
+    <div id="signup-username-field" class="field hidden"><label for="signup-username">Choose your username</label><input id="signup-username" maxlength="20" autocomplete="username" placeholder="3–20 letters, numbers or underscores"></div>
+    <div class="field"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+    <div class="auth-actions"><button id="sign-in" class="btn primary">Sign in</button><button id="create-account" class="btn">Create account</button></div>
+    <button id="back-to-signin" class="btn ghost block hidden" style="margin-top:8px">Back to sign in</button>
+    <div id="auth-message"></div>
+    <div class="auth-note">Game Balance is not money. It cannot be purchased, transferred, or redeemed. Deposit and Withdraw are internal Balance request labels only.</div>
   </div>
+</section>
 
-  <!-- AUTH SCREEN -->
-  <div id="auth-screen" class="center-screen hidden">
-    <div class="auth-card">
-      <div class="logo-title">B-<span>Will</span></div>
-      <input id="auth-email" class="field-input" type="email" placeholder="Email" autocomplete="email" />
-      <input id="auth-pass" class="field-input" type="password" placeholder="Password" autocomplete="current-password" />
-      <div class="auth-actions">
-        <button id="btn-signin" class="btn3d btn-green" type="button">Sign in</button>
-        <button id="btn-signup" class="btn3d" type="button">Create account</button>
-      </div>
-      <div id="auth-msg" class="msg-line"></div>
-    </div>
+<div id="app" class="app hidden">
+<header class="topbar">
+  <div class="brand"><div class="brand-mark">B</div><span>B-Will</span></div>
+  <div class="topbar-right">
+    <div id="balance-chip" class="balance-chip"><span>Total Balance</span><strong id="header-balance">1,000</strong><span id="header-available">Available 1,000</span></div>
+    <button id="host-switch" class="btn subtle mode-btn hidden">Host view</button><button id="sign-out" class="btn ghost tiny">Sign out</button>
   </div>
+</header>
 
-  <!-- USERNAME SETUP SCREEN -->
-  <div id="username-screen" class="center-screen hidden">
-    <div class="auth-card">
-      <div class="logo-title">B-<span>Will</span></div>
-      <div style="text-align:center;font-size:14px;color:var(--muted);">Pick your display name</div>
-      <input id="uname-input" class="field-input" type="text" maxlength="30" placeholder="Username (max 30 chars)" />
-      <button id="btn-save-uname" class="btn3d btn-green" style="padding:12px;font-size:15px;" type="button">Continue</button>
-      <div id="uname-msg" class="msg-line"></div>
-    </div>
+<main id="player-app" class="app-shell">
+<section id="player-page-game" class="page active">
+  <div id="recent-strip" class="recent-strip">
+    <div class="recent-strip-head"><strong>Recent results</strong><button id="toggle-results" class="btn ghost tiny">Expand</button></div>
+    <div class="recent-strip-content"><div id="recent-results" class="recent-chips"><span class="small">Waiting for results…</span></div><div id="last-result-mini" class="last-result-mini"><span class="muted">Last result —</span></div></div>
+    <div class="expanded-results"><div id="last-result-full" class="last-result-full"><span class="small">No completed round yet.</span></div><div id="last-fairness" class="fairness">Fairness verification appears after settlement.</div></div>
   </div>
-
-  <!-- PLAYER SCREEN (3) -->
-  <div id="player-screen" class="hidden">
-    <!-- a) Header -->
-    <header class="p-header">
-      <div class="brand">B-<span>Will</span></div>
-      <div class="header-right">
-        <div class="coin-pill" id="balance-pill">
-          <span class="coin-icon">$</span>
-          <span id="balance-val">0</span>
-          <button id="btn-refresh-bal" class="bal-refresh-btn" type="button" aria-label="Refresh balance" title="Refresh balance">↻</button>
-        </div>
-        <button id="btn-menu" class="btn3d menu-btn" type="button" aria-label="Menu">☰</button>
-      </div>
-    </header>
-
-    <main class="p-body">
-      <!-- b) History strip -->
-      <div id="history-strip" class="history-strip"></div>
-
-      <!-- c) Status strip -->
-      <div class="status-strip">
-        <div id="status-text" class="st-open">OPEN</div>
-        <div id="pot-text" class="pot-label">Pot 0</div>
-      </div>
-
-      <!-- d & e) Grid + Timer OR Wheel Reveal -->
-      <div class="stage-wrap">
-        <div id="grid-container" style="display:flex;flex-direction:column;gap:6px;height:100%;justify-content:center;">
-          <div id="num-grid" class="num-grid"></div>
-          <div class="timer-track">
-            <div id="timer-fill" class="timer-fill"></div>
-          </div>
-        </div>
-        <div id="wheel-container" class="wheel-stage hidden"></div>
-      </div>
-
-      <!-- f) Bet panel -->
-      <section class="bet-panel">
-        <div class="tab-row">
-          <button id="tab-bet" class="tab-btn active" type="button">Bet</button>
-          <button id="tab-auto" class="tab-btn" type="button">Auto</button>
-        </div>
-
-        <!-- Slot 1 -->
-        <div class="slot-box">
-          <div class="slot-left">
-            <div class="stepper-row">
-              <span class="slot-badge">1</span>
-              <button id="s1-minus" class="btn3d step-btn" type="button">-</button>
-              <input id="s1-stake" class="stake-input" type="number" min="5" max="10000" value="10" />
-              <button id="s1-plus" class="btn3d step-btn" type="button">+</button>
-            </div>
-            <div class="chips-row">
-              <button class="btn3d chip-btn" data-slot="1" data-chip="10" type="button">10</button>
-              <button class="btn3d chip-btn" data-slot="1" data-chip="50" type="button">50</button>
-              <button class="btn3d chip-btn" data-slot="1" data-chip="100" type="button">100</button>
-              <button class="btn3d chip-btn" data-slot="1" data-chip="250" type="button">250</button>
-            </div>
-          </div>
-          <button id="s1-btn" class="btn3d slot-action-btn state-disabled" type="button">PICK A NUMBER</button>
-        </div>
-
-        <!-- Slot 2 -->
-        <div class="slot-box">
-          <div class="slot-left">
-            <div class="stepper-row">
-              <span class="slot-badge">2</span>
-              <button id="s2-minus" class="btn3d step-btn" type="button">-</button>
-              <input id="s2-stake" class="stake-input" type="number" min="5" max="10000" value="10" />
-              <button id="s2-plus" class="btn3d step-btn" type="button">+</button>
-            </div>
-            <div class="chips-row">
-              <button class="btn3d chip-btn" data-slot="2" data-chip="10" type="button">10</button>
-              <button class="btn3d chip-btn" data-slot="2" data-chip="50" type="button">50</button>
-              <button class="btn3d chip-btn" data-slot="2" data-chip="100" type="button">100</button>
-              <button class="btn3d chip-btn" data-slot="2" data-chip="250" type="button">250</button>
-            </div>
-          </div>
-          <button id="s2-btn" class="btn3d slot-action-btn state-disabled" type="button">PICK A NUMBER</button>
-        </div>
+  <div class="game-grid">
+    <div class="game-main">
+      <section class="panel round-panel">
+        <div class="round-top"><div><div id="round-id" class="round-number">Connecting…</div><div id="round-phase" class="phase-pill"><span class="phase-dot"></span>Loading</div></div><div class="timer-wrap"><div id="timer-label" class="timer-label">Betting closes in</div><div id="timer" class="timer">00:07</div></div></div>
+        <div class="progress"><i id="round-progress"></i></div>
       </section>
-    </main>
-
-    <!-- g) Live Bets bar + sheet -->
-    <div id="live-sheet" class="live-sheet hidden">
-      <div id="live-sheet-list" class="live-sheet-list"></div>
-    </div>
-    <div id="live-bar" class="live-bar">
-      <span id="live-bar-title">Live Bets (0)</span>
-      <span id="live-bar-arrow">▲</span>
-    </div>
-
-    <!-- 5. PLAYER MENU DROPDOWN -->
-    <div id="menu-backdrop" class="menu-backdrop hidden">
-      <div class="menu-panel" id="menu-panel">
-        <div class="menu-top-row">
-          <span id="menu-signed-in">Signed in</span>
-          <button id="btn-signout" class="btn3d btn-red" style="padding:6px 12px;font-size:12px;" type="button">Sign out</button>
+      <section class="panel wheel-panel">
+        <div class="wheel-head"><strong>Choose a colour</strong><span id="round-pot">Round activity · 0</span></div>
+        <div class="wheel-stage"><div class="wheel-pointer"></div>
+          <svg id="color-wheel" class="wheel-svg" viewBox="0 0 300 300" role="group" aria-label="Choose Green, Orange, or Blue">
+            <path data-color="green" fill="#23bd83" d="M150 150 L150 20 A130 130 0 0 1 262.58 85 Z"></path>
+            <path data-color="orange" fill="#f19a42" d="M150 150 L262.58 85 A130 130 0 0 1 37.42 85 Z"></path>
+            <path data-color="blue" fill="#568af6" d="M150 150 L37.42 85 A130 130 0 0 1 150 20 Z"></path>
+            <text x="207" y="91">GREEN</text><text x="150" y="236">ORANGE</text><text x="93" y="91">BLUE</text>
+            <circle class="wheel-center" cx="150" cy="150" r="31"></circle><text class="wheel-center-label" x="150" y="155">B-WILL</text>
+          </svg>
         </div>
-
-        <div class="menu-box">
-          <div class="menu-box-title">Request coins</div>
-          <div class="menu-input-row">
-            <input id="req-topup-amt" class="field-input" type="number" min="1" placeholder="Amount" />
-            <button id="btn-req-topup" class="btn3d btn-green" type="button">Request</button>
+        <div id="wheel-hint" class="wheel-hint">Select a slot, then tap a colour on the wheel.</div>
+        <div class="slots">
+          <div class="slot-card active" id="slot-card-1" data-slot-card="1">
+            <div class="slot-top"><span class="slot-name">Slot 1</span><span id="slot-status-1" class="slot-status">AVAILABLE</span></div>
+            <button class="btn ghost tiny block" data-select-slot="1">Use Slot 1</button>
+            <div id="slot-selection-1" class="slot-selection"><span class="slot-color-dot"></span><span>No colour selected</span></div>
+            <div class="stake-row"><input id="stake-1" type="number" min="5" max="10000" step="1" value="10" aria-label="Slot 1 stake"><button id="place-1" class="btn primary">Place</button></div>
+            <div class="stake-chips"><button class="stake-chip" data-slot="1" data-amount="5">+5</button><button class="stake-chip" data-slot="1" data-amount="10">+10</button><button class="stake-chip" data-slot="1" data-amount="50">+50</button><button class="stake-chip" data-slot="1" data-amount="100">+100</button></div>
+            <div class="slot-bottom"><span id="slot-help-1" class="small">Min 5 · Max 10,000</span><button id="cancel-1" class="btn danger tiny hidden">Cancel</button></div>
           </div>
-          <div id="msg-topup" class="box-msg"></div>
-        </div>
-
-        <div class="menu-box">
-          <div class="menu-box-title">Withdraw (min 100)</div>
-          <div class="menu-input-row">
-            <input id="req-withdraw-amt" class="field-input" type="number" min="100" placeholder="Amount" />
-            <button id="btn-req-withdraw" class="btn3d btn-yellow" type="button">Withdraw</button>
+          <div class="slot-card" id="slot-card-2" data-slot-card="2">
+            <div class="slot-top"><span class="slot-name">Slot 2</span><span id="slot-status-2" class="slot-status">AVAILABLE</span></div>
+            <button class="btn ghost tiny block" data-select-slot="2">Use Slot 2</button>
+            <div id="slot-selection-2" class="slot-selection"><span class="slot-color-dot"></span><span>No colour selected</span></div>
+            <div class="stake-row"><input id="stake-2" type="number" min="5" max="10000" step="1" value="10" aria-label="Slot 2 stake"><button id="place-2" class="btn primary">Place</button></div>
+            <div class="stake-chips"><button class="stake-chip" data-slot="2" data-amount="5">+5</button><button class="stake-chip" data-slot="2" data-amount="10">+10</button><button class="stake-chip" data-slot="2" data-amount="50">+50</button><button class="stake-chip" data-slot="2" data-amount="100">+100</button></div>
+            <div class="slot-bottom"><span id="slot-help-2" class="small">Min 5 · Max 10,000</span><button id="cancel-2" class="btn danger tiny hidden">Cancel</button></div>
           </div>
-          <div id="msg-withdraw" class="box-msg"></div>
         </div>
-
-        <button id="btn-sound" class="btn3d" style="padding:10px;font-size:14px;" type="button">Sound: on</button>
-      </div>
+        <div class="game-note">Two slots per round. Bets and cancellations close when the 7-second betting phase ends.</div>
+      </section>
     </div>
+    <aside class="side-stack">
+      <section class="panel"><div class="section-heading"><h3>Live bets</h3><span id="live-count" class="small">0</span></div><div id="live-bets" class="live-list"><div class="empty">No bets yet</div></div></section>
+      <section class="panel"><div class="section-heading"><h3>Balance summary</h3></div><div class="panel-stat"><span>Total Balance</span><strong id="game-total-balance">1,000</strong></div><div class="panel-stat"><span>Available</span><strong id="game-available-balance">1,000</strong></div><div class="panel-stat"><span>Reserved</span><strong id="game-reserved-balance">0</strong></div><button class="btn ghost tiny block" data-open-page="balance" style="margin-top:9px">View Balance</button></section>
+    </aside>
   </div>
+</section>
 
-  <!-- 7. HOST PAGE -->
-  <div id="host-screen" class="hidden">
-    <div class="host-container">
-      <div class="host-main-stack">
-        <!-- Top Header -->
-        <div class="host-topbar">
-          <div class="host-title">B-Will Host</div>
-          <div class="host-actions">
-            <button id="h-btn-req-view" class="h-btn" type="button">
-              Requests
-              <span id="h-req-dot" class="red-dot hidden"></span>
-            </button>
-            <button id="h-btn-back-dash" class="h-btn h-btn-accent hidden" type="button">← Dashboard</button>
-          </div>
-        </div>
+<section id="player-page-leaderboard" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>Weekly leaderboard</h2><p>One point for every winning bet. Stake size and profit do not affect rank.</p></div><button id="refresh-leaderboard" class="btn ghost tiny">Refresh</button></div><div class="inline-note">This ranking runs from Monday 00:00 to the present in your local time. It is a score table only; no entry fees or prizes are being collected.</div><div id="leaderboard-podium" class="leaderboard-podium"></div><div id="leaderboard-list" class="data-list"><div class="empty">Loading leaderboard…</div></div></div></section>
+<section id="player-page-history" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>My history</h2><p>Your bets, results, and cancellations.</p></div><button id="refresh-player-history" class="btn ghost tiny">Refresh</button></div><div id="player-history-list" class="data-list"><div class="empty">Loading your history…</div></div><button id="load-more-history" class="btn subtle block hidden" style="margin-top:12px">Load more</button></div></section>
 
-        <!-- VIEW 1: DASHBOARD OVERVIEW -->
-        <div id="host-dashboard-view" style="display:flex;flex-direction:column;gap:14px;">
-          <div class="host-summary">
-            <div class="h-tile">
-              <div id="h-sum-profit" class="h-tile-val">0</div>
-              <div class="h-tile-lbl">House profit today</div>
-            </div>
-            <div class="h-tile">
-              <div id="h-sum-players" class="h-tile-val">0</div>
-              <div class="h-tile-lbl">Players</div>
-            </div>
-            <div class="h-tile">
-              <div id="h-sum-pending" class="h-tile-val">0</div>
-              <div class="h-tile-lbl">Pending requests</div>
-            </div>
-          </div>
+<section id="player-page-balance" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>Balance</h2><p>Your Game Balance and account ledger.</p></div><button id="refresh-ledger" class="btn ghost tiny">Refresh</button></div><div class="balance-overview"><div class="balance-metric"><span>Total Balance</span><strong id="balance-total-page">1,000</strong></div><div class="balance-metric"><span>Available</span><strong id="balance-available-page">1,000</strong></div><div class="balance-metric"><span>Reserved</span><strong id="balance-reserved-page">0</strong></div></div><div class="inline-note">Reserved Balance is part of your total Balance, but cannot be used for bets while a Withdraw request is pending.</div><div class="section-heading" style="margin-top:20px"><h3>Balance history</h3></div><div id="balance-ledger-list" class="data-list"><div class="empty">Loading Balance history…</div></div></div></section>
 
-          <div class="h-card">
-            <div class="h-sec-title"><span>Today's Dashboard</span></div>
-            <div id="h-bars"></div>
-          </div>
-        </div>
-
-        <!-- VIEW 2: REQUESTS PAGE (Collapsible Top-up, Withdrawal & Recent Decisions) -->
-        <div id="host-requests-view" class="hidden" style="display:flex;flex-direction:column;gap:14px;">
-          <!-- Collapsible Top-up Requests -->
-          <div class="h-card">
-            <button id="toggle-topup" class="collapsible-header" type="button" aria-expanded="true">
-              <span class="collapsible-left">
-                <span>Top-up requests</span>
-                <span id="h-topup-count" class="count-pill">0</span>
-              </span>
-              <span id="chev-topup" class="chevron-icon">▼</span>
-            </button>
-            <div id="h-topup-body" class="collapsible-body">
-              <div id="h-topup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-            </div>
-          </div>
-
-          <!-- Collapsible Withdrawal Requests -->
-          <div class="h-card">
-            <button id="toggle-withdraw" class="collapsible-header" type="button" aria-expanded="true">
-              <span class="collapsible-left">
-                <span>Withdrawal requests</span>
-                <span id="h-withdraw-count" class="count-pill">0</span>
-              </span>
-              <span id="chev-withdraw" class="chevron-icon">▼</span>
-            </button>
-            <div id="h-withdraw-body" class="collapsible-body">
-              <div id="h-withdraw-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-            </div>
-          </div>
-
-          <!-- Collapsible Recent Decisions (Approved / Disapproved Signs) -->
-          <div class="h-card">
-            <button id="toggle-decisions" class="collapsible-header" type="button" aria-expanded="false">
-              <span class="collapsible-left">
-                <span>Recent decisions</span>
-                <span id="h-decisions-count" class="count-pill">0</span>
-              </span>
-              <span id="chev-decisions" class="chevron-icon collapsed">▼</span>
-            </button>
-            <div id="h-decisions-body" class="collapsible-body hidden">
-              <div id="h-decisions-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bottom Actions (Copy game link & Sign out) -->
-      <div class="host-bottom-bar">
-        <button id="h-btn-copy" class="h-btn h-btn-accent" type="button">Copy game link</button>
-        <button id="h-btn-signout" class="h-btn" type="button">Sign out</button>
-      </div>
-    </div>
+<section id="player-page-requests" class="page"><div class="requests-layout">
+  <div class="panel content-panel"><div class="section-heading"><div><h2>New request</h2><p>Ask the Host to adjust your Game Balance.</p></div></div>
+    <div class="field"><label for="request-type">Request type</label><select id="request-type"><option value="deposit">Deposit · Increase Balance</option><option value="withdraw">Withdraw · Reduce Balance</option></select></div>
+    <div class="field"><label for="request-amount">Amount</label><input id="request-amount" type="number" min="1" step="1" placeholder="Enter amount"></div>
+    <div class="field"><label for="request-note">Explanation (optional)</label><textarea id="request-note" maxlength="200" placeholder="Add a short explanation"></textarea></div>
+    <div class="inline-note" id="request-available-note">Available Balance: 1,000. Withdraw requests reserve the amount until reviewed.</div>
+    <button id="submit-balance-request" class="btn primary block">Submit request</button><div class="small" style="margin-top:10px">Deposit and Withdraw are internal Game Balance requests only. No money is sent or received.</div>
   </div>
+  <div class="panel content-panel"><div class="section-heading"><div><h2>My requests</h2><p>Track pending, approved, and rejected requests.</p></div><button id="refresh-my-requests" class="btn ghost tiny">Refresh</button></div><div id="my-requests-list" class="data-list"><div class="empty">Loading requests…</div></div></div>
+</div></section>
 
-  <div id="toast" class="toast hidden"></div>
+<section id="player-page-profile" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>Profile</h2><p>Your account information.</p></div></div><div class="profile-grid"><div class="profile-item"><span>Username</span><strong id="profile-username">—</strong></div><div class="profile-item"><span>Email</span><strong id="profile-email">—</strong></div><div class="profile-item"><span>Account type</span><strong>Player</strong></div><div class="profile-item"><span>Game Balance</span><strong>Non-monetary</strong></div></div><div class="inline-note" style="margin-top:14px">Your username is chosen during account creation and cannot be changed from the player interface.</div></div></section>
 
-  <script>
-    // =========================================================================
-    // CONFIGURATION: SUPABASE PROJECT URL & PUBLISHABLE KEY
-    // =========================================================================
-    const SUPABASE_URL = "https://vtcghmileaeexewsoqog.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable__VqENgBwn--4StCbMmjfVQ_TLMpDqkn";
+<nav id="player-nav" class="navbar" aria-label="Player navigation">
+<button class="nav-item active" data-player-page="game"><span class="nav-icon">◉</span><span>Game</span></button><button class="nav-item" data-player-page="leaderboard"><span class="nav-icon">🏆</span><span>Ranks</span></button><button class="nav-item" data-player-page="history"><span class="nav-icon">↺</span><span>History</span></button><button class="nav-item" data-player-page="balance"><span class="nav-icon">◈</span><span>Balance</span></button><button class="nav-item" data-player-page="requests"><span class="nav-icon">⇄</span><span>Requests</span></button><button class="nav-item" data-player-page="profile"><span class="nav-icon">○</span><span>Profile</span></button>
+</nav>
+</main>
 
-    // Pastel colours for numbers 1 to 10
-    const TILE_COLORS = [
-      "#e58f8c", "#eba975", "#e3c978", "#aed78a", "#7dcfa0",
-      "#7fcfc8", "#86b9e6", "#9aa6e8", "#b79be6", "#e59bc9"
-    ];
+<main id="host-app" class="app-shell hidden">
+<section id="host-page-dashboard" class="page active"><div class="panel content-panel"><div class="section-heading"><div><h2>Host dashboard</h2><p>Live game operations at a glance.</p></div><button id="refresh-host-dashboard" class="btn ghost tiny">Refresh</button></div><div class="host-round-card"><div><div class="eyebrow">Current game</div><strong id="host-round-id">Connecting…</strong><div id="host-round-phase" class="phase-pill">Loading</div></div><div class="timer-wrap"><div id="host-timer-label" class="timer-label">Betting closes in</div><div id="host-timer" class="timer">00:07</div></div></div><div class="host-dashboard-grid"><div class="host-stat"><span>Active players</span><strong id="host-active-players">0</strong></div><div class="host-stat"><span>Betting activity</span><strong id="host-betting-activity">0</strong></div><div class="host-stat"><span>Pending requests</span><strong id="host-pending-requests">0</strong></div><div class="host-stat"><span>Game status</span><strong id="host-game-status" style="font-size:16px">—</strong></div></div><div class="inline-note">The game advances automatically. There are no manual pause, stop, or resume controls.</div></div></section>
 
-    const EPOCH_MS = Date.parse("2026-01-01T00:00:00Z");
-    const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+<section id="host-page-history" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>History</h2><p>Past rounds, bets, Balance changes, and requests.</p></div><button id="refresh-host-history" class="btn ghost tiny">Refresh</button></div><div class="history-tabs"><button class="history-tab active" data-host-history-tab="rounds">Rounds</button><button class="history-tab" data-host-history-tab="bets">Bets</button><button class="history-tab" data-host-history-tab="balance_ledger">Balance ledger</button><button class="history-tab" data-host-history-tab="requests">Requests</button></div><div id="host-history-list" class="data-list"><div class="empty">Loading Host history…</div></div></div></section>
 
-    let sb = null;
-    let currentUser = null;
-    let username = "";
-    let isHost = false;
+<section id="host-page-balances" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>Player Balances</h2><p>Review total, reserved, and available Balance.</p></div><button id="refresh-host-balances" class="btn ghost tiny">Refresh</button></div><div id="host-player-balances" class="data-list"><div class="empty">Loading player balances…</div></div><div class="inline-note">Adjustments must include a reason. A player's Balance cannot be reduced below their reserved amount.</div><div class="form-grid"><div class="field"><label for="adjust-player">Player</label><select id="adjust-player"></select></div><div class="field"><label for="adjust-amount">Adjustment (+ / −)</label><input id="adjust-amount" type="number" step="1" placeholder="e.g. 100 or -50"></div><div class="field full"><label for="adjust-reason">Reason</label><input id="adjust-reason" maxlength="200" placeholder="Reason for adjustment"></div></div><button id="apply-adjustment" class="btn primary">Apply adjustment</button><div id="adjust-message" class="small" style="margin-top:9px"></div></div></section>
 
-    // Clock sync
-    let clockOffsetMs = 0; // serverNow - localNow
+<section id="host-page-requests" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>Requests</h2><p>Review internal Deposit and Withdraw Balance requests.</p></div><button id="refresh-host-requests" class="btn ghost tiny">Refresh</button></div><div class="inline-note">Approved requests adjust Game Balance only. No real-money deposits or payouts are processed.</div><div id="host-requests-list" class="data-list"><div class="empty">Loading pending requests…</div></div></div></section>
 
-    // Sound state (only persisted setting allowed)
-    let soundOn = localStorage.getItem("bwill_sound") !== "off";
-    let audioCtx = null;
+<section id="host-page-profile" class="page"><div class="panel content-panel"><div class="section-heading"><div><h2>Host profile</h2><p>Operator account information.</p></div></div><div class="profile-grid"><div class="profile-item"><span>Username</span><strong id="host-profile-username">—</strong></div><div class="profile-item"><span>Email</span><strong id="host-profile-email">—</strong></div><div class="profile-item"><span>Role</span><strong>Host / Administrator</strong></div><div class="profile-item"><span>Game control</span><strong>Automated</strong></div></div></div></section>
 
-    // Player state
-    let actualBalance = 0;
-    let displayedBalance = 0;
-    let balanceAnimId = null;
-    let holdBalanceUntilWheelLands = false;
+<nav id="host-nav" class="navbar" aria-label="Host navigation">
+<button class="nav-item active" data-host-page="dashboard"><span class="nav-icon">▦</span><span>Dashboard</span></button><button class="nav-item" data-host-page="history"><span class="nav-icon">↺</span><span>History</span></button><button class="nav-item" data-host-page="balances"><span class="nav-icon">◈</span><span>Balances</span></button><button class="nav-item" data-host-page="requests"><span class="nav-icon">⇄</span><span>Requests</span></button><button class="nav-item" data-host-page="profile"><span class="nav-icon">○</span><span>Profile</span></button>
+</nav>
+</main>
+<div class="footer-note">B-Will · Game Balance has no cash value · No real-money transactions</div>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
 
-    let selectedNumber = null;
-    let betMode = "bet"; // "bet" | "auto"
-    let slots = {
-      1: { stake: 10, placed: false, placedNum: null, placedStake: 0, lastNum: null, optimistic: false },
-      2: { stake: 10, placed: false, placedNum: null, placedStake: 0, lastNum: null, optimistic: false }
-    };
+<script>
+(() => {
+  const SUPABASE_URL="https://vtcghmileaeexewsoqog.supabase.co";
+  const SUPABASE_KEY="sb_publishable__VqENgBwn--4StCbMmjfVQ_TLMpDqkn";
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const $=id=>document.getElementById(id);
+  const colorHex={green:"#23bd83",orange:"#f19a42",blue:"#568af6"};
+  const colorLabel={green:"Green",orange:"Orange",blue:"Blue"};
+  const money=n=>Number(n||0).toLocaleString();
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const dateText=v=>v?new Date(v).toLocaleString():"—";
+  let user=null,profile=null,isHost=false,mode="player",state=null,hostData=null,hostHistory=null,hostHistoryTab="rounds",activePage="game";
+  let activeSlot=1,selectedColors={1:null,2:null},placedBets={1:null,2:null},currentRoundId=null,currentPhase=null,lastVerifiedRoundId=null;
+  let historyCursor=null,historyHasMore=false,playerHistory=[],requestHistory=[];
+  let pollTimer=null,hostPollTimer=null,clockTimer=null,pollBusy=false,entering=false,signupMode=false,resultsExpanded=false;
 
-    let activeRoundId = null;
-    let lastPhase = null; // "BETTING" | "REVEAL"
-    let roundBets = [];
-    let settledRoundCache = {}; // roundId -> round row
-    let historyList = []; // last 10 winning numbers, newest first
-    let lastHistoryRoundId = null;
-    let liveSheetOpen = false;
-    let autoTriggeredForRound = null;
-
-    // Wheel state
-    let wheelAngle = 0;
-    let wheelLanded = false;
-    let wheelDecelStart = null;
-    let wheelDecelFrom = 0;
-    let wheelDecelTo = 0;
-    let wheelDecelDuration = 1500;
-    let wheelTargetWinner = null;
-    let lastTickSegment = -1;
-    let tickRetryTimer = null;
-
-    // Host state
-    let hostPollTimer = null;
-    let knownPendingIds = new Set();
-    let hostActiveView = "dashboard"; // "dashboard" | "requests"
-    let recentDecisions = []; // { id, name, kind, amount, approved, decidedAt }
-    let collapsibleState = {
-      topup: true,
-      withdraw: true,
-      decisions: false
-    };
-
-    // Helpers
-    const $ = (id) => document.getElementById(id);
-
-    function esc(str) {
-      return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+  function toast(message,kind){const el=$("toast");el.textContent=message;el.classList.remove("hidden");el.style.background=kind==="error"?"#f08b98":"#f4c45c";clearTimeout(toast._timer);toast._timer=setTimeout(()=>el.classList.add("hidden"),2800);}
+  function authMessage(message,kind){$("auth-message").textContent=message;$("auth-message").className=kind||"";}
+  function showAuth(show){$("auth-screen").classList.toggle("hidden",!show);$("app").classList.toggle("hidden",show);}
+  function setSignupMode(on){signupMode=on;$("signup-username-field").classList.toggle("hidden",!on);$("sign-in").classList.toggle("hidden",on);$("back-to-signin").classList.toggle("hidden",!on);$("auth-title").textContent=on?"Create your account":"Welcome back";$("auth-subtitle").textContent=on?"Choose your permanent username.":"Sign in to continue to B-Will.";authMessage("");}
+  async function authAction(kind){
+    const email=$("email").value.trim(),password=$("password").value;
+    if(!email||!password)return authMessage("Enter your email and password.","error");
+    if(password.length<6)return authMessage("Password must be at least 6 characters.","error");
+    let result;
+    if(kind==="signup"){
+      const username=$("signup-username").value.trim();
+      if(!/^[A-Za-z0-9_]{3,20}$/.test(username))return authMessage("Username must be 3–20 letters, numbers, or underscores.","error");
+      authMessage("Creating your account…");
+      result=await sb.auth.signUp({email,password,options:{data:{username:username}}});
+      if(result.error)return authMessage(result.error.message,"error");
+      user=result.data.user;
+      if(!result.data.session)return authMessage("Account created. Confirm your email, then sign in. Your username is saved.","ok");
+      await enterApp();
+    }else{
+      authMessage("Signing in…");
+      result=await sb.auth.signInWithPassword({email,password});
+      if(result.error)return authMessage(result.error.message,"error");
+      user=result.data.user;await enterApp();
     }
-
-    function haptic(ms = 12) {
-      if (navigator.vibrate) {
-        try { navigator.vibrate(ms); } catch (_) {}
+  }
+  async function enterApp(){
+    if(!user||entering)return;entering=true;
+    try{
+      const ensured=await sb.rpc("bw_ensure_account");if(ensured.error)throw ensured.error;profile=ensured.data;
+      const admin=await sb.rpc("bw_is_admin");if(admin.error)throw admin.error;isHost=!!admin.data;
+      $("host-switch").classList.toggle("hidden",!isHost);
+      $("profile-email").textContent=user.email||"—";$("host-profile-email").textContent=user.email||"—";
+      $("profile-username").textContent=profile?.username||"Player";$("host-profile-username").textContent=profile?.username||"Host";
+      showAuth(false);switchMode("player");await loadState();
+      if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(loadState,1400);
+      if(clockTimer)clearInterval(clockTimer);clockTimer=setInterval(updateClocks,100);
+    }catch(e){console.error(e);toast(e.message||"Unable to open account.","error");authMessage(e.message||"Unable to open account.","error");}
+    finally{entering=false;}
+  }
+  function switchMode(next){
+    mode=next;const host=next==="host";$("player-app").classList.toggle("hidden",host);$("host-app").classList.toggle("hidden",!host);$("balance-chip").classList.toggle("hidden",host);
+    $("host-switch").textContent=host?"Player view":"Host view";
+    if(host){setActiveHostPage(["dashboard","history","balances","requests","profile"].includes(activePage)?activePage:"dashboard");loadHostDashboard();if(hostPollTimer)clearInterval(hostPollTimer);hostPollTimer=setInterval(loadHostDashboard,1800);}
+    else{if(hostPollTimer)clearInterval(hostPollTimer);setActivePlayerPage(["game","leaderboard","history","balance","requests","profile"].includes(activePage)?activePage:"game");renderGame();}
+  }
+  function setActivePlayerPage(page){
+    activePage=page;document.querySelectorAll("#player-app .page").forEach(el=>el.classList.toggle("active",el.id==="player-page-"+page));
+    document.querySelectorAll("[data-player-page]").forEach(el=>el.classList.toggle("active",el.dataset.playerPage===page));
+    if(page==="history")loadPlayerHistory(true);if(page==="leaderboard")loadLeaderboard();if(page==="balance")loadBalanceLedger();if(page==="requests")loadMyRequests();
+  }
+  function setActiveHostPage(page){
+    activePage=page;document.querySelectorAll("#host-app .page").forEach(el=>el.classList.toggle("active",el.id==="host-page-"+page));
+    document.querySelectorAll("[data-host-page]").forEach(el=>el.classList.toggle("active",el.dataset.hostPage===page));
+    if(page==="dashboard")loadHostDashboard();if(page==="history")loadHostHistory();if(page==="balances")renderHostBalances();if(page==="requests")loadHostRequests();
+  }
+  function updateBalanceUI(){
+    if(!state)return;const total=Number(state.wallet||0),available=Number(state.available_balance??total),reserved=Number(state.reserved_balance||0);
+    $("header-balance").textContent=money(total);$("header-available").textContent="Available "+money(available);
+    $("game-total-balance").textContent=money(total);$("game-available-balance").textContent=money(available);$("game-reserved-balance").textContent=money(reserved);
+    $("balance-total-page").textContent=money(total);$("balance-available-page").textContent=money(available);$("balance-reserved-page").textContent=money(reserved);
+    $("request-available-note").textContent="Available Balance: "+money(available)+". Pending Withdraw requests reserve the amount until reviewed.";
+  }
+  async function loadState(){
+    if(!user||pollBusy)return;pollBusy=true;
+    try{
+      const res=await sb.rpc("bw_get_state");if(res.error)throw res.error;const data=res.data;state=data;const round=data.round||{};
+      const nextId=Number(round.id||0),nextPhase=round.status||round.phase||"open";
+      if(currentRoundId!==nextId){currentRoundId=nextId;selectedColors={1:null,2:null};placedBets={1:null,2:null};activeSlot=1;resetWheel();}
+      else if(currentPhase==="open"&&nextPhase==="revealing"&&round.winner_color)spinWheel(round.winner_color);
+      currentPhase=nextPhase;placedBets={1:null,2:null};(data.my_bets||[]).forEach(b=>{placedBets[Number(b.slot_index)]=b;});
+      updateBalanceUI();renderGame();await loadLiveBets(nextId);await renderResults(data);
+    }catch(e){console.error(e);if(!state)toast(e.message||"Unable to load game state.","error");}
+    finally{pollBusy=false;}
+  }
+  function isBettingOpen(){return !!state?.round&&state.round.status==="open"&&Date.now()<new Date(state.round.closes_at).getTime();}
+  function updateClocks(){
+    if(state?.round){
+      const r=state.round,open=r.status==="open",target=open?r.closes_at:r.reveal_ends_at;
+      const left=Math.max(0,Math.ceil((new Date(target).getTime()-Date.now())/1000));
+      $("timer").textContent="00:"+String(left).padStart(2,"0");$("timer-label").textContent=open?"Betting closes in":"Reveal ends in";
+      const start=new Date(r.starts_at).getTime(),close=new Date(r.closes_at).getTime(),end=new Date(r.reveal_ends_at||r.closes_at).getTime();
+      const pct=open?Math.max(0,Math.min(70,(Date.now()-start)/Math.max(1,close-start)*70)):70+Math.max(0,Math.min(30,(Date.now()-close)/Math.max(1,end-close)*30));
+      $("round-progress").style.width=pct+"%";if(left===0&&open)renderSlots();
+    }
+    if(mode==="host"&&hostData?.current_round){
+      const r=hostData.current_round,open=r.status==="open",target=open?r.closes_at:r.reveal_ends_at;
+      const left=Math.max(0,Math.ceil((new Date(target).getTime()-Date.now())/1000));
+      $("host-timer").textContent="00:"+String(left).padStart(2,"0");$("host-timer-label").textContent=open?"Betting closes in":"Reveal ends in";
+    }
+  }
+  function renderGame(){
+    if(!state)return;const r=state.round||{};$("round-id").textContent="Round #"+money(r.id);
+    const phase=r.status||"open",pill=$("round-phase");pill.className="phase-pill"+(phase==="revealing"?" revealing":"");
+    pill.innerHTML='<span class="phase-dot"></span>'+(phase==="revealing"?"REVEALING":"BETTING OPEN");$("round-pot").textContent="Round activity · "+money(r.total_pot||0);
+    renderWheel();renderSlots();updateClocks();
+  }
+  function renderWheel(){
+    $("color-wheel").querySelectorAll("path[data-color]").forEach(path=>{path.classList.toggle("selected",selectedColors[activeSlot]===path.dataset.color);path.style.cursor=isBettingOpen()&&!placedBets[activeSlot]?"pointer":"not-allowed";});
+    const chosen=selectedColors[activeSlot];$("wheel-hint").textContent=placedBets[activeSlot]?"This slot already has a bet placed.":!isBettingOpen()?"Betting is closed. The result is being revealed.":chosen?colorLabel[chosen]+" selected for Slot "+activeSlot+".":"Slot "+activeSlot+" selected. Tap a colour on the wheel.";
+  }
+  function renderSlots(){
+    const open=isBettingOpen();
+    [1,2].forEach(slot=>{
+      const bet=placedBets[slot],card=$("slot-card-"+slot),status=$("slot-status-"+slot),selection=$("slot-selection-"+slot),input=$("stake-"+slot),place=$("place-"+slot),cancel=$("cancel-"+slot);
+      card.classList.toggle("active",activeSlot===slot);
+      if(bet){
+        status.textContent=open?"BET PLACED":"LOCKED";selection.innerHTML='<span class="slot-color-dot" style="background:'+colorHex[bet.color]+'"></span><span>'+esc(colorLabel[bet.color])+' · '+money(bet.stake)+' Balance</span>';
+        input.disabled=true;place.disabled=true;place.textContent="Placed";cancel.classList.toggle("hidden",!open);cancel.disabled=!open;$("slot-help-"+slot).textContent=open?"You can cancel before betting closes.":"Bet locked for reveal.";
+      }else{
+        status.textContent=open?"AVAILABLE":"CLOSED";const color=selectedColors[slot];
+        selection.innerHTML=color?'<span class="slot-color-dot" style="background:'+colorHex[color]+'"></span><span>'+esc(colorLabel[color])+' selected</span>':'<span class="slot-color-dot"></span><span>No colour selected</span>';
+        input.disabled=!open;const stake=Number(input.value),available=Number(state.available_balance??state.wallet??0);
+        place.disabled=!open||!color||!Number.isSafeInteger(stake)||stake<5||stake>10000||stake>available;place.textContent="Place";cancel.classList.add("hidden");
+        $("slot-help-"+slot).textContent=stake<5?"Minimum stake is 5.":stake>10000?"Maximum stake is 10,000.":stake>available?"Insufficient available Balance.":"Min 5 · Max 10,000";
       }
-    }
-
-    let toastTimer = null;
-    function showToast(msg) {
-      const el = $("toast");
-      el.textContent = msg;
-      el.classList.remove("hidden");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => el.classList.add("hidden"), 2800);
-    }
-
-    function showOnlyScreen(id) {
-      ["loading-screen", "auth-screen", "username-screen", "player-screen", "host-screen"].forEach((s) => {
-        $(s).classList.toggle("hidden", s !== id);
-      });
-    }
-
-    // =========================================================================
-    // AUDIO (Web Audio API)
-    // =========================================================================
-    function ensureAudio() {
-      if (!soundOn) return null;
-      if (!audioCtx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) audioCtx = new AC();
-      }
-      if (audioCtx && audioCtx.state === "suspended") {
-        audioCtx.resume().catch(() => {});
-      }
-      return audioCtx;
-    }
-
-    function playClick() {
-      const ctx = ensureAudio();
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(520, now);
-      osc.frequency.exponentialRampToValueAtTime(260, now + 0.045);
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.05);
-    }
-
-    function playTick() {
-      const ctx = ensureAudio();
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, now);
-      gain.gain.setValueAtTime(0.035, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.025);
-    }
-
-    function playChime() {
-      const ctx = ensureAudio();
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      [587.33, 880].forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        const t = now + idx * 0.11;
-        osc.frequency.setValueAtTime(freq, t);
-        gain.gain.setValueAtTime(0.08, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.3);
-      });
-    }
-
-    function playHostBeep() {
-      const ctx = ensureAudio();
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      [660, 990].forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        const t = now + idx * 0.12;
-        osc.frequency.setValueAtTime(freq, t);
-        gain.gain.setValueAtTime(0.09, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.2);
-      });
-    }
-
-    // =========================================================================
-    // CLOCK SYNC (Lowest latency of 3 pings)
-    // =========================================================================
-    async function syncServerClock() {
-      let bestRtt = Infinity;
-      let bestOffset = 0;
-      let latestTick = null;
-
-      for (let i = 0; i < 3; i++) {
-        const t0 = performance.now();
-        const localStart = Date.now();
-        const { data, error } = await sb.rpc("tick");
-        const t1 = performance.now();
-        if (!error && data && data.server_time) {
-          const rtt = t1 - t0;
-          const serverMs = Date.parse(data.server_time);
-          const localMid = localStart + rtt / 2;
-          if (rtt < bestRtt) {
-            bestRtt = rtt;
-            bestOffset = serverMs - localMid;
-          }
-          latestTick = data;
-        }
-      }
-      clockOffsetMs = bestOffset;
-      return latestTick;
-    }
-
-    function serverNowMs() {
-      return Date.now() + clockOffsetMs;
-    }
-
-    function getRoundClockInfo() {
-      const elapsedSec = (serverNowMs() - EPOCH_MS) / 1000;
-      const roundId = Math.floor(elapsedSec / 10);
-      const phaseSec = elapsedSec - roundId * 10;
-      return { roundId, phaseSec, isBetting: phaseSec < 7.0 };
-    }
-
-    // =========================================================================
-    // BALANCE COUNTER ANIMATION & MANUAL REFRESH
-    // =========================================================================
-    function setBalanceTarget(newBal, immediate = false) {
-      actualBalance = Number(newBal) || 0;
-      if (holdBalanceUntilWheelLands && !immediate) return;
-      animateBalanceTo(actualBalance, immediate);
-    }
-
-    function animateBalanceTo(target, immediate = false) {
-      cancelAnimationFrame(balanceAnimId);
-      if (immediate || REDUCED_MOTION || displayedBalance === target) {
-        displayedBalance = target;
-        $("balance-val").textContent = String(displayedBalance);
-        updateSlotButtons();
-        return;
-      }
-      const start = displayedBalance;
-      const diff = target - start;
-      const startTime = performance.now();
-      const dur = 350;
-
-      function step(now) {
-        const p = Math.min(1, (now - startTime) / dur);
-        const eased = 1 - Math.pow(1 - p, 3);
-        displayedBalance = Math.round(start + diff * eased);
-        $("balance-val").textContent = String(displayedBalance);
-        if (p < 1) {
-          balanceAnimId = requestAnimationFrame(step);
-        } else {
-          displayedBalance = target;
-          $("balance-val").textContent = String(target);
-          updateSlotButtons();
-        }
-      }
-      balanceAnimId = requestAnimationFrame(step);
-    }
-
-    async function manualRefreshBalance() {
-      if (!currentUser || !sb) return;
-      haptic(10);
-      const btn = $("btn-refresh-bal");
-      btn.classList.add("spinning");
-      try {
-        const { data, error } = await sb
-          .from("wallets")
-          .select("balance")
-          .eq("user_id", currentUser.id)
-          .single();
-        if (!error && data && typeof data.balance === "number") {
-          actualBalance = Number(data.balance) || 0;
-          holdBalanceUntilWheelLands = false;
-          animateBalanceTo(actualBalance, false);
-        }
-      } finally {
-        setTimeout(() => btn.classList.remove("spinning"), 350);
-      }
-    }
-
-    // =========================================================================
-    // INIT & AUTH
-    // =========================================================================
-    async function initApp() {
-      if (!SUPABASE_URL.startsWith("http") || SUPABASE_ANON_KEY.startsWith("REPLACE")) {
-        $("loading-msg").textContent = "Setup incomplete: add SUPABASE_URL and SUPABASE_ANON_KEY in index.html.";
-        return;
-      }
-
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-      $("btn-signin").addEventListener("click", handleSignIn);
-      $("btn-signup").addEventListener("click", handleSignUp);
-      $("btn-save-uname").addEventListener("click", handleSaveUsername);
-
-      const { data: { session }, error } = await sb.auth.getSession();
-      if (error || !session) {
-        showOnlyScreen("auth-screen");
-        return;
-      }
-      await onAuthenticated(session.user);
-    }
-
-    async function handleSignIn() {
-      haptic();
-      const email = $("auth-email").value.trim();
-      const password = $("auth-pass").value;
-      const msg = $("auth-msg");
-      msg.className = "msg-line";
-      if (!email || !password) {
-        msg.textContent = "Enter email and password.";
-        msg.classList.add("err");
-        return;
-      }
-      msg.textContent = "Signing in…";
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) {
-        msg.textContent = error.message;
-        msg.classList.add("err");
-        return;
-      }
-      if (data.user) {
-        await onAuthenticated(data.user);
-      }
-    }
-
-    async function handleSignUp() {
-      haptic();
-      const email = $("auth-email").value.trim();
-      const password = $("auth-pass").value;
-      const msg = $("auth-msg");
-      msg.className = "msg-line";
-      if (!email || !password) {
-        msg.textContent = "Enter email and password.";
-        msg.classList.add("err");
-        return;
-      }
-      msg.textContent = "Creating account…";
-      const { data, error } = await sb.auth.signUp({ email, password });
-      if (error) {
-        msg.textContent = error.message;
-        msg.classList.add("err");
-        return;
-      }
-      if (data.session && data.user) {
-        await onAuthenticated(data.user);
-      } else {
-        msg.textContent = "Check your email to confirm your account, then sign in.";
-        msg.classList.add("ok");
-      }
-    }
-
-    async function onAuthenticated(user) {
-      currentUser = user;
-      showOnlyScreen("loading-screen");
-      $("loading-msg").textContent = "Loading profile…";
-
-      try {
-        const { data: adminFlag, error: adminErr } = await sb.rpc("is_admin");
-        if (adminErr) throw adminErr;
-        isHost = Boolean(adminFlag);
-
-        if (isHost) {
-          startHostApp();
-          return;
-        }
-
-        const { data: bal, error: walErr } = await sb.rpc("ensure_wallet");
-        if (walErr) throw walErr;
-        actualBalance = Number(bal) || 0;
-        displayedBalance = actualBalance;
-        $("balance-val").textContent = String(displayedBalance);
-
-        const { data: uname, error: unErr } = await sb.rpc("my_username");
-        if (unErr) throw unErr;
-
-        if (!uname) {
-          showOnlyScreen("username-screen");
-          return;
-        }
-
-        username = uname;
-        await startPlayerApp();
-      } catch (err) {
-        showOnlyScreen("auth-screen");
-        $("auth-msg").textContent = err.message || "Failed to load session.";
-        $("auth-msg").classList.add("err");
-      }
-    }
-
-    async function handleSaveUsername() {
-      haptic();
-      const val = $("uname-input").value.trim();
-      const msg = $("uname-msg");
-      msg.className = "msg-line";
-      if (!val || val.length > 30) {
-        msg.textContent = "Username must be 1 to 30 characters.";
-        msg.classList.add("err");
-        return;
-      }
-      msg.textContent = "Saving…";
-      const { data, error } = await sb.rpc("set_username", { p_username: val });
-      if (error) {
-        msg.textContent = error.message;
-        msg.classList.add("err");
-        return;
-      }
-      username = data;
-      await startPlayerApp();
-    }
-
-    // =========================================================================
-    // PLAYER SCREEN LOGIC
-    // =========================================================================
-    async function startPlayerApp() {
-      showOnlyScreen("player-screen");
-      $("menu-signed-in").textContent = "Signed in " + username;
-      $("btn-sound").textContent = soundOn ? "Sound: on" : "Sound: off";
-
-      buildGridDOM();
-      buildWheelSVG();
-      wirePlayerEvents();
-
-      const firstTick = await syncServerClock();
-      if (firstTick && firstTick.round && firstTick.round.status === "SETTLED") {
-        settledRoundCache[firstTick.round.id] = firstTick.round;
-      }
-
-      await fetchRecentHistory();
-      setupRealtimeSubscriptions();
-
-      requestAnimationFrame(gameLoop);
-
-      setInterval(() => {
-        const info = getRoundClockInfo();
-        if (info.isBetting && activeRoundId === info.roundId) {
-          fetchRoundBets(info.roundId);
-        }
-      }, 2500);
-    }
-
-    function buildGridDOM() {
-      const grid = $("num-grid");
-      grid.innerHTML = "";
-      for (let n = 1; n <= 10; n++) {
-        const tile = document.createElement("div");
-        tile.className = "num-tile";
-        tile.dataset.num = String(n);
-        tile.innerHTML = `
-          <div class="tile-num">${n}</div>
-          <div class="tile-mult" id="mult-${n}">MAX</div>
-          <div class="tile-dots" id="dots-${n}"></div>
-        `;
-        tile.addEventListener("click", () => {
-          const info = getRoundClockInfo();
-          if (!info.isBetting) return;
-          haptic(10);
-          selectedNumber = n;
-          updateTileSelectionUI();
-          updateSlotButtons();
-        });
-        grid.appendChild(tile);
-      }
-    }
-
-    function updateTileSelectionUI() {
-      document.querySelectorAll(".num-tile").forEach((el) => {
-        const n = Number(el.dataset.num);
-        el.classList.toggle("selected", selectedNumber === n);
-      });
-    }
-
-    function buildWheelSVG() {
-      const container = $("wheel-container");
-      const cx = 100, cy = 100, r = 90;
-      let segs = "";
-      for (let i = 0; i < 10; i++) {
-        const num = i + 1;
-        const startDeg = -90 - 18 + i * 36;
-        const endDeg = startDeg + 36;
-        const midDeg = startDeg + 18;
-        const rad1 = (startDeg * Math.PI) / 180;
-        const rad2 = (endDeg * Math.PI) / 180;
-        const midRad = (midDeg * Math.PI) / 180;
-
-        const x1 = cx + r * Math.cos(rad1);
-        const y1 = cy + r * Math.sin(rad1);
-        const x2 = cx + r * Math.cos(rad2);
-        const y2 = cy + r * Math.sin(rad2);
-
-        const tx = cx + 63 * Math.cos(midRad);
-        const ty = cy + 63 * Math.sin(midRad);
-        const textRot = midDeg + 90;
-
-        segs += `
-          <g id="wseg-${num}" class="w-seg" style="transition:opacity 0.25s ease;">
-            <path d="M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z"
-                  fill="${TILE_COLORS[i]}" stroke="#101b42" stroke-width="2" />
-            <text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}"
-                  fill="#131c3d" font-size="15" font-weight="700"
-                  text-anchor="middle" dominant-baseline="central"
-                  transform="rotate(${textRot.toFixed(1)}, ${tx.toFixed(2)}, ${ty.toFixed(2)})">${num}</text>
-          </g>
-        `;
-      }
-
-      container.innerHTML = `
-        <svg viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="95" fill="#0d1638" stroke="#2a3f87" stroke-width="4" />
-          <g id="wheel-rotor" transform="rotate(0, 100, 100)">
-            ${segs}
-            <path id="wseg-win-outline" d="" fill="none" stroke="#ffc933" stroke-width="4.5" class="hidden" />
-          </g>
-          <circle cx="100" cy="100" r="24" fill="#101b42" stroke="#2a3f87" stroke-width="3" />
-          <text id="wheel-hub-text" x="100" y="100" fill="#ffc933" font-size="16" font-weight="700"
-                text-anchor="middle" dominant-baseline="central"></text>
-          <polygon points="100,16 91,2 109,2" fill="#ffc933" stroke="#101b42" stroke-width="1.5" />
-        </svg>
-      `;
-    }
-
-    function wirePlayerEvents() {
-      $("btn-refresh-bal").addEventListener("click", manualRefreshBalance);
-
-      $("tab-bet").addEventListener("click", () => {
-        haptic();
-        betMode = "bet";
-        $("tab-bet").classList.add("active");
-        $("tab-auto").classList.remove("active");
-      });
-      $("tab-auto").addEventListener("click", () => {
-        haptic();
-        betMode = "auto";
-        $("tab-auto").classList.add("active");
-        $("tab-bet").classList.remove("active");
-        maybeTriggerAutoBets();
-      });
-
-      [1, 2].forEach((slot) => {
-        const inp = $(`s${slot}-stake`);
-        $(`s${slot}-minus`).addEventListener("click", () => {
-          if (slots[slot].placed) return;
-          haptic(8);
-          const next = Math.max(5, (parseInt(inp.value, 10) || 10) - 10);
-          inp.value = String(next);
-          slots[slot].stake = next;
-          updateSlotButtons();
-        });
-        $(`s${slot}-plus`).addEventListener("click", () => {
-          if (slots[slot].placed) return;
-          haptic(8);
-          const next = Math.min(10000, (parseInt(inp.value, 10) || 0) + 10);
-          inp.value = String(next);
-          slots[slot].stake = next;
-          updateSlotButtons();
-        });
-        inp.addEventListener("input", () => {
-          slots[slot].stake = parseInt(inp.value, 10) || 0;
-          updateSlotButtons();
-        });
-        $(`s${slot}-btn`).addEventListener("click", () => handleSlotButtonClick(slot));
-      });
-
-      document.querySelectorAll(".chip-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const slot = Number(btn.dataset.slot);
-          if (slots[slot].placed) return;
-          haptic(8);
-          const chip = Number(btn.dataset.chip);
-          const inp = $(`s${slot}-stake`);
-          const next = Math.min(10000, (parseInt(inp.value, 10) || 0) + chip);
-          inp.value = String(next);
-          slots[slot].stake = next;
-          updateSlotButtons();
-        });
-      });
-
-      $("live-bar").addEventListener("click", () => {
-        haptic(8);
-        liveSheetOpen = !liveSheetOpen;
-        $("live-sheet").classList.toggle("hidden", !liveSheetOpen);
-        $("live-bar-arrow").textContent = liveSheetOpen ? "▼" : "▲";
-      });
-
-      $("btn-menu").addEventListener("click", () => {
-        haptic(10);
-        openPlayerMenu(false);
-      });
-      $("menu-backdrop").addEventListener("click", (e) => {
-        if (e.target === $("menu-backdrop")) {
-          $("menu-backdrop").classList.add("hidden");
-        }
-      });
-      $("btn-signout").addEventListener("click", async () => {
-        await sb.auth.signOut();
-        location.reload();
-      });
-
-      $("btn-req-topup").addEventListener("click", async () => {
-        haptic();
-        $("msg-withdraw").textContent = "";
-        const msg = $("msg-topup");
-        msg.className = "box-msg";
-        const amt = parseInt($("req-topup-amt").value, 10);
-        if (!amt || amt < 1) {
-          msg.textContent = "Empty amount.";
-          msg.classList.add("err");
-          return;
-        }
-        const { error } = await sb.rpc("request_topup", { p_amount: amt });
-        if (error) {
-          msg.textContent = error.message;
-          msg.classList.add("err");
-          return;
-        }
-        $("req-topup-amt").value = "";
-        msg.textContent = "Request sent.";
-        msg.classList.add("ok");
-      });
-
-      $("btn-req-withdraw").addEventListener("click", async () => {
-        haptic();
-        $("msg-topup").textContent = "";
-        const msg = $("msg-withdraw");
-        msg.className = "box-msg";
-        const amt = parseInt($("req-withdraw-amt").value, 10);
-        if (!amt) {
-          msg.textContent = "Empty amount.";
-          msg.classList.add("err");
-          return;
-        }
-        if (amt < 100) {
-          msg.textContent = "Minimum is 100.";
-          msg.classList.add("err");
-          return;
-        }
-        if (amt > actualBalance) {
-          msg.textContent = `You only have ${actualBalance} coins.`;
-          msg.classList.add("err");
-          return;
-        }
-        const { error } = await sb.rpc("request_withdraw", { p_amount: amt });
-        if (error) {
-          msg.textContent = error.message;
-          msg.classList.add("err");
-          return;
-        }
-        $("req-withdraw-amt").value = "";
-        msg.textContent = "Request sent.";
-        msg.classList.add("ok");
-      });
-
-      $("btn-sound").addEventListener("click", () => {
-        haptic(8);
-        soundOn = !soundOn;
-        localStorage.setItem("bwill_sound", soundOn ? "on" : "off");
-        $("btn-sound").textContent = soundOn ? "Sound: on" : "Sound: off";
-        if (soundOn) playClick();
-      });
-    }
-
-    function openPlayerMenu(focusTopup) {
-      $("msg-topup").textContent = "";
-      $("msg-withdraw").textContent = "";
-      $("menu-backdrop").classList.remove("hidden");
-      if (focusTopup) {
-        setTimeout(() => $("req-topup-amt").focus(), 50);
-      }
-    }
-
-    function setSlotInputsDisabled(slot, disabled) {
-      $(`s${slot}-stake`).disabled = disabled;
-      $(`s${slot}-minus`).disabled = disabled;
-      $(`s${slot}-plus`).disabled = disabled;
-      document.querySelectorAll(`.chip-btn[data-slot="${slot}"]`).forEach((b) => {
-        b.disabled = disabled;
-      });
-    }
-
-    function updateSlotButtons() {
-      const info = getRoundClockInfo();
-      [1, 2].forEach((slot) => {
-        const btn = $(`s${slot}-btn`);
-        const st = slots[slot];
-        const stake = parseInt($(`s${slot}-stake`).value, 10) || 0;
-
-        btn.className = "btn3d slot-action-btn";
-
-        if (st.placed) {
-          btn.disabled = true;
-          btn.classList.add("btn-yellow");
-          btn.textContent = `PLACED ${st.placedStake} on #${st.placedNum}`;
-          setSlotInputsDisabled(slot, true);
-          return;
-        }
-
-        if (!info.isBetting) {
-          btn.disabled = true;
-          btn.classList.add("state-closed");
-          btn.textContent = "BETTING CLOSED";
-          setSlotInputsDisabled(slot, true);
-          return;
-        }
-
-        setSlotInputsDisabled(slot, false);
-
-        if (displayedBalance < 5) {
-          btn.disabled = false;
-          btn.classList.add("btn-green");
-          btn.textContent = "REQUEST COINS";
-          return;
-        }
-
-        if (!selectedNumber) {
-          btn.disabled = true;
-          btn.classList.add("state-disabled");
-          btn.textContent = "PICK A NUMBER";
-          return;
-        }
-
-        if (stake < 5 || stake > 10000) {
-          btn.disabled = true;
-          btn.classList.add("state-disabled");
-          btn.textContent = "MIN BET 5";
-          return;
-        }
-
-        if (stake > displayedBalance) {
-          btn.disabled = true;
-          btn.classList.add("state-disabled");
-          btn.textContent = "LOW BALANCE";
-          return;
-        }
-
-        btn.disabled = false;
-        btn.classList.add("btn-green");
-        btn.textContent = `BET ${stake} on #${selectedNumber}`;
-      });
-    }
-
-    async function handleSlotButtonClick(slot) {
-      const info = getRoundClockInfo();
-      if (!info.isBetting || slots[slot].placed) return;
-
-      if (displayedBalance < 5) {
-        haptic(10);
-        openPlayerMenu(true);
-        return;
-      }
-
-      const num = selectedNumber;
-      const stake = parseInt($(`s${slot}-stake`).value, 10) || 0;
-      if (!num || stake < 5 || stake > 10000 || stake > displayedBalance) return;
-
-      selectedNumber = null;
-      updateTileSelectionUI();
-
-      await submitBetForSlot(slot, num, stake, info.roundId);
-    }
-
-    async function submitBetForSlot(slot, num, stake, roundId) {
-      haptic(15);
-      playClick();
-
-      const prevBal = displayedBalance;
-      slots[slot].placed = true;
-      slots[slot].placedNum = num;
-      slots[slot].placedStake = stake;
-      slots[slot].lastNum = num;
-      slots[slot].optimistic = true;
-      animateBalanceTo(Math.max(0, prevBal - stake), true);
-      updateSlotButtons();
-
-      const { data, error } = await sb.rpc("place_bet", {
-        p_slot: slot,
-        p_number: num,
-        p_stake: stake
-      });
-
-      if (error) {
-        slots[slot].placed = false;
-        slots[slot].placedNum = null;
-        slots[slot].placedStake = 0;
-        slots[slot].optimistic = false;
-        animateBalanceTo(prevBal, true);
-        updateSlotButtons();
-        showToast(error.message || "Bet rejected");
-        return;
-      }
-
-      slots[slot].optimistic = false;
-      if (data && typeof data.balance === "number") {
-        actualBalance = data.balance;
-        animateBalanceTo(data.balance, true);
-      }
-      await fetchRoundBets(roundId);
-    }
-
-    function maybeTriggerAutoBets() {
-      if (betMode !== "auto") return;
-      const info = getRoundClockInfo();
-      if (!info.isBetting) return;
-      if (autoTriggeredForRound === info.roundId) return;
-      autoTriggeredForRound = info.roundId;
-
-      [1, 2].forEach((slot) => {
-        const st = slots[slot];
-        const stake = parseInt($(`s${slot}-stake`).value, 10) || st.stake;
-        if (!st.placed && st.lastNum && stake >= 5 && stake <= displayedBalance) {
-          submitBetForSlot(slot, st.lastNum, stake, info.roundId);
-        }
-      });
-    }
-
-    // =========================================================================
-    // DATA FETCHING & REALTIME
-    // =========================================================================
-    async function fetchRoundBets(roundId) {
-      const { data, error } = await sb
-        .from("bets")
-        .select("*")
-        .eq("round_id", roundId)
-        .order("id", { ascending: true });
-
-      if (error || !data) return;
-      if (activeRoundId !== roundId) return;
-
-      roundBets = data;
-
-      [1, 2].forEach((slot) => {
-        const mine = roundBets.find((b) => b.user_id === currentUser.id && b.slot_index === slot);
-        if (mine) {
-          slots[slot].placed = true;
-          slots[slot].placedNum = mine.target_number;
-          slots[slot].placedStake = Number(mine.stake);
-          slots[slot].lastNum = mine.target_number;
-          slots[slot].optimistic = false;
-        }
-      });
-
-      renderBoardMetrics();
-      renderLiveBetsFeed();
-      updateSlotButtons();
-    }
-
-    async function fetchRecentHistory() {
-      const { data, error } = await sb
-        .from("rounds")
-        .select("id, winning_number")
-        .eq("status", "SETTLED")
-        .not("winning_number", "is", null)
-        .order("id", { ascending: false })
-        .limit(10);
-
-      if (!error && data) {
-        historyList = data.map((r) => Number(r.winning_number));
-        if (data.length > 0) {
-          lastHistoryRoundId = Number(data[0].id);
-        }
-        renderHistoryStrip();
-      }
-    }
-
-    function recordWinnerInHistory(roundId, winNum) {
-      const rid = Number(roundId);
-      const num = Number(winNum);
-      if (!(num >= 1 && num <= 10)) return;
-      if (lastHistoryRoundId !== null && rid <= lastHistoryRoundId) return;
-      lastHistoryRoundId = rid;
-      historyList = [num, ...historyList].slice(0, 10);
-      renderHistoryStrip();
-    }
-
-    function renderHistoryStrip() {
-      const strip = $("history-strip");
-      strip.innerHTML = "";
-      for (let i = 0; i < 10; i++) {
-        const num = historyList[i];
-        const div = document.createElement("div");
-        if (num >= 1 && num <= 10) {
-          div.className = "hist-dot";
-          div.style.background = TILE_COLORS[num - 1];
-          div.textContent = String(num);
-        } else {
-          div.className = "hist-dot empty";
-          div.textContent = "0";
-        }
-        strip.appendChild(div);
-      }
-    }
-
-    function renderBoardMetrics() {
-      const pot = roundBets.reduce((acc, b) => acc + Number(b.stake), 0);
-      $("pot-text").textContent = `Pot ${pot}`;
-
-      for (let n = 1; n <= 10; n++) {
-        const tileBets = roundBets.filter((b) => b.target_number === n);
-        const onTile = tileBets.reduce((acc, b) => acc + Number(b.stake), 0);
-        const multEl = $(`mult-${n}`);
-        if (onTile <= 0 || pot <= 0) {
-          multEl.textContent = "MAX";
-        } else {
-          const mult = (0.9 * pot) / onTile;
-          multEl.textContent = mult >= 10 ? mult.toFixed(1) + "x" : mult.toFixed(2) + "x";
-        }
-
-        const dotsEl = $(`dots-${n}`);
-        dotsEl.innerHTML = "";
-        const seenPlayers = new Map();
-        for (const b of tileBets) {
-          const key = b.user_id || `bot-${b.id}`;
-          if (!seenPlayers.has(key)) {
-            seenPlayers.set(key, b.user_id === currentUser.id);
-          }
-        }
-        let count = 0;
-        for (const [, isMine] of seenPlayers.entries()) {
-          if (count >= 5) break;
-          const d = document.createElement("span");
-          d.className = isMine ? "p-dot mine" : "p-dot";
-          dotsEl.appendChild(d);
-          count++;
-        }
-      }
-    }
-
-    function renderLiveBetsFeed() {
-      $("live-bar-title").textContent = `Live Bets (${roundBets.length})`;
-      const list = $("live-sheet-list");
-      const showPayouts = wheelLanded;
-      list.innerHTML = roundBets.map((b) => {
-        const col = TILE_COLORS[(b.target_number || 1) - 1] || "#ccc";
-        const payHtml = showPayouts && Number(b.payout) > 0
-          ? `<span class="bet-payout">+${Number(b.payout)}</span>`
-          : "";
-        return `
-          <div class="bet-row">
-            <div class="bet-row-left">
-              <span class="bet-num-pill" style="background:${col};">#${b.target_number}</span>
-              <span class="bet-uname">${esc(b.name)}</span>
-            </div>
-            <div class="bet-row-right">
-              <span>${Number(b.stake)}</span>
-              ${payHtml}
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function setupRealtimeSubscriptions() {
-      sb.channel("bwill-live")
-        .on("postgres_changes", { event: "*", schema: "public", table: "bets" }, (payload) => {
-          const row = payload.new;
-          if (!row || Number(row.round_id) !== activeRoundId) return;
-          const idx = roundBets.findIndex((b) => b.id === row.id);
-          if (idx >= 0) roundBets[idx] = row;
-          else roundBets.push(row);
-
-          if (row.user_id === currentUser.id && (row.slot_index === 1 || row.slot_index === 2)) {
-            slots[row.slot_index].placed = true;
-            slots[row.slot_index].placedNum = row.target_number;
-            slots[row.slot_index].placedStake = Number(row.stake);
-            slots[row.slot_index].lastNum = row.target_number;
-          }
-          renderBoardMetrics();
-          renderLiveBetsFeed();
-          updateSlotButtons();
-        })
-        .on("postgres_changes", { event: "*", schema: "public", table: "rounds" }, (payload) => {
-          const r = payload.new;
-          if (r && r.status === "SETTLED") {
-            settledRoundCache[r.id] = r;
-          }
-        })
-        .on("postgres_changes", {
-          event: "UPDATE",
-          schema: "public",
-          table: "wallets",
-          filter: `user_id=eq.${currentUser.id}`
-        }, (payload) => {
-          if (payload.new && typeof payload.new.balance === "number") {
-            setBalanceTarget(payload.new.balance, false);
-          }
-        })
-        .subscribe();
-    }
-
-    // =========================================================================
-    // MAIN ROUND LOOP & WHEEL REVEAL
-    // =========================================================================
-    function onEnterBettingRound(roundId) {
-      activeRoundId = roundId;
-      clearInterval(tickRetryTimer);
-      wheelLanded = false;
-      wheelTargetWinner = null;
-      wheelDecelStart = null;
-      holdBalanceUntilWheelLands = false;
-
-      animateBalanceTo(actualBalance, true);
-
-      [1, 2].forEach((slot) => {
-        slots[slot].placed = false;
-        slots[slot].placedNum = null;
-        slots[slot].placedStake = 0;
-        slots[slot].optimistic = false;
-      });
-      roundBets = [];
-
-      $("grid-container").classList.remove("hidden");
-      $("wheel-container").classList.add("hidden");
-      $("status-text").className = "st-open";
-      $("status-text").textContent = "OPEN";
-
-      renderBoardMetrics();
-      renderLiveBetsFeed();
-      updateSlotButtons();
-
-      sb.rpc("tick").then(({ data }) => {
-        if (data && data.round && data.round.status === "SETTLED") {
-          settledRoundCache[data.round.id] = data.round;
-        }
-        fetchRoundBets(roundId);
-      });
-
-      setTimeout(maybeTriggerAutoBets, 120);
-    }
-
-    function onEnterRevealPhase(roundId) {
-      activeRoundId = roundId;
-      selectedNumber = null;
-      updateTileSelectionUI();
-      updateSlotButtons();
-
-      holdBalanceUntilWheelLands = true;
-      wheelLanded = false;
-      wheelTargetWinner = null;
-      wheelDecelStart = null;
-      lastTickSegment = -1;
-
-      const winOutline = $("wseg-win-outline");
-      if (winOutline) winOutline.classList.add("hidden");
-      const hubText = $("wheel-hub-text");
-      if (hubText) hubText.textContent = "";
-      for (let i = 1; i <= 10; i++) {
-        const seg = $(`wseg-${i}`);
-        if (seg) seg.style.opacity = "1";
-      }
-
-      $("grid-container").classList.add("hidden");
-      $("wheel-container").classList.remove("hidden");
-      $("status-text").className = "st-draw";
-      $("status-text").textContent = "DRAWING…";
-
-      clearInterval(tickRetryTimer);
-      const pollSettle = async () => {
-        if (settledRoundCache[roundId]) {
-          clearInterval(tickRetryTimer);
-          return;
-        }
-        const { data } = await sb.rpc("tick");
-        if (data && data.round && data.round.status === "SETTLED") {
-          settledRoundCache[data.round.id] = data.round;
-          clearInterval(tickRetryTimer);
-        }
-      };
-      pollSettle();
-      tickRetryTimer = setInterval(pollSettle, 350);
-    }
-
-    function startWheelDeceleration(winningNumber, phaseSec) {
-      wheelTargetWinner = winningNumber;
-      wheelDecelStart = performance.now();
-      wheelDecelFrom = ((wheelAngle % 360) + 360) % 360;
-
-      const targetMod = (360 - (winningNumber - 1) * 36) % 360;
-      let delta = (targetMod - wheelDecelFrom + 360) % 360;
-      wheelDecelTo = wheelDecelFrom + 720 + delta;
-
-      const remainingMs = Math.max(600, (9.65 - phaseSec) * 1000);
-      wheelDecelDuration = Math.min(1800, Math.max(1200, remainingMs));
-      if (remainingMs < 1200) {
-        wheelDecelDuration = remainingMs;
-      }
-    }
-
-    function onWheelLanding(roundRow) {
-      if (wheelLanded) return;
-      wheelLanded = true;
-      const winNum = Number(roundRow.winning_number);
-
-      playChime();
-      haptic(25);
-
-      for (let i = 1; i <= 10; i++) {
-        const seg = $(`wseg-${i}`);
-        if (seg) seg.style.opacity = i === winNum ? "1" : "0.32";
-      }
-
-      const cx = 100, cy = 100, r = 90;
-      const startDeg = -90 - 18 + (winNum - 1) * 36;
-      const endDeg = startDeg + 36;
-      const rad1 = (startDeg * Math.PI) / 180;
-      const rad2 = (endDeg * Math.PI) / 180;
-      const x1 = cx + r * Math.cos(rad1);
-      const y1 = cy + r * Math.sin(rad1);
-      const x2 = cx + r * Math.cos(rad2);
-      const y2 = cy + r * Math.sin(rad2);
-
-      const outline = $("wseg-win-outline");
-      if (outline) {
-        outline.setAttribute("d", `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`);
-        outline.classList.remove("hidden");
-      }
-
-      const hub = $("wheel-hub-text");
-      if (hub) hub.textContent = String(winNum);
-
-      $("status-text").className = "st-win";
-      $("status-text").textContent = `WINNER: #${winNum}`;
-
-      recordWinnerInHistory(roundRow.id, winNum);
-
-      holdBalanceUntilWheelLands = false;
-      sb.from("wallets").select("balance").eq("user_id", currentUser.id).single().then(({ data }) => {
-        if (data && typeof data.balance === "number") {
-          setBalanceTarget(data.balance, false);
-        } else {
-          animateBalanceTo(actualBalance, false);
-        }
-      });
-      fetchRoundBets(roundRow.id);
-    }
-
-    let lastFrameTs = performance.now();
-    function gameLoop(nowTs) {
-      const dt = Math.min(0.1, (nowTs - lastFrameTs) / 1000);
-      lastFrameTs = nowTs;
-
-      const info = getRoundClockInfo();
-      const phase = info.isBetting ? "BETTING" : "REVEAL";
-
-      if (activeRoundId !== info.roundId || lastPhase !== phase) {
-        lastPhase = phase;
-        if (info.isBetting) {
-          onEnterBettingRound(info.roundId);
-        } else {
-          onEnterRevealPhase(info.roundId);
-        }
-      }
-
-      if (info.isBetting) {
-        const ratio = Math.max(0, Math.min(1, (7.0 - info.phaseSec) / 7.0));
-        $("timer-fill").style.transform = `scaleX(${ratio.toFixed(4)})`;
-      } else {
-        const settled = settledRoundCache[info.roundId];
-        if (settled && settled.winning_number && wheelTargetWinner === null) {
-          startWheelDeceleration(Number(settled.winning_number), info.phaseSec);
-        }
-
-        const rotor = $("wheel-rotor");
-        if (rotor) {
-          if (wheelTargetWinner === null) {
-            wheelAngle = (wheelAngle + 720 * dt) % 360;
-            rotor.setAttribute("transform", `rotate(${wheelAngle.toFixed(2)}, 100, 100)`);
-          } else if (!wheelLanded) {
-            const elapsed = nowTs - wheelDecelStart;
-            const p = Math.min(1, elapsed / wheelDecelDuration);
-            const eased = REDUCED_MOTION ? 1 : 1 - Math.pow(1 - p, 3);
-            wheelAngle = wheelDecelFrom + (wheelDecelTo - wheelDecelFrom) * eased;
-            rotor.setAttribute("transform", `rotate(${wheelAngle.toFixed(2)}, 100, 100)`);
-
-            const segIdx = Math.floor((((360 - (wheelAngle % 360)) % 360) + 18) / 36) % 10;
-            if (segIdx !== lastTickSegment) {
-              lastTickSegment = segIdx;
-              playTick();
-            }
-
-            if (p >= 1) {
-              onWheelLanding(settled);
-            }
-          }
-        }
-      }
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    // =========================================================================
-    // 7. HOST PAGE LOGIC
-    // =========================================================================
-    function setHostView(view) {
-      hostActiveView = view;
-      const isReqView = view === "requests";
-      $("host-dashboard-view").classList.toggle("hidden", isReqView);
-      $("host-requests-view").classList.toggle("hidden", !isReqView);
-      $("h-btn-req-view").classList.toggle("hidden", isReqView);
-      $("h-btn-back-dash").classList.toggle("hidden", !isReqView);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function toggleCollapsible(key) {
-      haptic(8);
-      collapsibleState[key] = !collapsibleState[key];
-      applyCollapsibleUI();
-    }
-
-    function applyCollapsibleUI() {
-      ["topup", "withdraw", "decisions"].forEach((key) => {
-        const open = collapsibleState[key];
-        $(`toggle-${key}`).setAttribute("aria-expanded", String(open));
-        $(`h-${key}-body`).classList.toggle("hidden", !open);
-        $(`chev-${key}`).classList.toggle("collapsed", !open);
-      });
-    }
-
-    async function startHostApp() {
-      showOnlyScreen("host-screen");
-      setHostView("dashboard");
-      applyCollapsibleUI();
-
-      $("h-btn-signout").addEventListener("click", async () => {
-        await sb.auth.signOut();
-        location.reload();
-      });
-
-      $("h-btn-copy").addEventListener("click", async () => {
-        haptic();
-        try {
-          await navigator.clipboard.writeText(window.location.origin + window.location.pathname);
-          showToast("Game link copied!");
-        } catch (_) {
-          showToast(window.location.origin + window.location.pathname);
-        }
-      });
-
-      $("h-btn-req-view").addEventListener("click", () => {
-        haptic();
-        setHostView("requests");
-        refreshHostDashboard(false);
-      });
-
-      $("h-btn-back-dash").addEventListener("click", () => {
-        haptic();
-        setHostView("dashboard");
-        refreshHostDashboard(false);
-      });
-
-      $("toggle-topup").addEventListener("click", () => toggleCollapsible("topup"));
-      $("toggle-withdraw").addEventListener("click", () => toggleCollapsible("withdraw"));
-      $("toggle-decisions").addEventListener("click", () => toggleCollapsible("decisions"));
-
-      $("h-bars").innerHTML = `<div style="font-size:12px;color:var(--h-muted);">Loading…</div>`;
-      ["h-topup-list", "h-withdraw-list", "h-decisions-list"].forEach((id) => {
-        $(id).innerHTML = `<div style="font-size:12px;color:var(--h-muted);">Loading…</div>`;
-      });
-      if (!$("h-status")) {
-        document.querySelector(".host-topbar").insertAdjacentHTML(
-          "afterend",
-          `<div id="h-status" style="font-size:11px;color:var(--h-muted);padding:0 8px;">Starting…</div>`
-        );
-      }
-
-      await refreshHostDashboard(true);
-
-      sb.channel("bwill-host")
-        .on("postgres_changes", { event: "*", schema: "public", table: "requests" }, () => {
-          refreshHostDashboard(false);
-        })
-        .subscribe((status) => {
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            console.warn("[host] Realtime on public.requests:", status, "- falling back to 8s polling");
-          }
-        });
-
-      hostPollTimer = setInterval(() => refreshHostDashboard(false), 8000);
-    }
-
-    // ---- Host loading helpers (shape-tolerant + error-aware) ----
-    let hostRefreshing = false;
-    let hostRefreshQueued = false;
-    let hostLastErrKey = "";
-    const hostLoaded = { stats: false, reqs: false };
-
-    // Run a Supabase call; never throws, always returns { data, error }
-    async function hostSafe(promiseLike) {
-      try {
-        const r = await Promise.race([
-          promiseLike,
-          new Promise((_, rej) => setTimeout(() => rej(new Error("Request timed out (12s)")), 12000))
-        ]);
-        return { data: r ? r.data : null, error: r ? r.error : null };
-      } catch (e) {
-        return { data: null, error: e };
-      }
-    }
-
-    // RPCs can return a row, an array of rows, or a single-key wrapper object
-    function hostRow(d, wrapKey) {
-      if (Array.isArray(d)) d = d[0] ?? null;
-      if (d && wrapKey && d[wrapKey] && typeof d[wrapKey] === "object" && !Array.isArray(d[wrapKey])) d = d[wrapKey];
-      return d && typeof d === "object" ? d : null;
-    }
-    function hostRows(d, wrapKey) {
-      if (Array.isArray(d)) return d;
-      if (d && wrapKey && Array.isArray(d[wrapKey])) return d[wrapKey];
-      return [];
-    }
-    function hostErrHtml(msg) {
-      return `<div style="font-size:12px;color:#ff9a9a;">${esc(msg)}</div>`;
-    }
-
-    async function refreshHostDashboard(isInitial) {
-      // Prevent overlapping refreshes (Realtime + 8s poll + button clicks)
-      if (hostRefreshing) { hostRefreshQueued = true; return; }
-      hostRefreshing = true;
-      try {
-        const [rStats, rReqs, rPlayers, rDone] = await Promise.all([
-          hostSafe(sb.rpc("stats")),
-          hostSafe(sb.from("requests").select("*").eq("status", "PENDING").order("created_at", { ascending: true })),
-          hostSafe(sb.rpc("players")),
-          hostSafe(sb.from("requests").select("*").in("status", ["APPROVED", "DECLINED"]).order("decided_at", { ascending: false }).limit(15))
-        ]);
-
-        // Log every failure with its source so it's visible in DevTools
-        const errs = [];
-        if (rStats.error)   errs.push(["stats()", rStats.error]);
-        if (rReqs.error)    errs.push(["requests", rReqs.error]);
-        if (rPlayers.error) errs.push(["players()", rPlayers.error]);
-        errs.forEach(([src, e]) => console.error(`[host] ${src} failed:`, e));
-        const errKey = errs.map(([src, e]) => src + ":" + (e.message || e)).join("|");
-        if (errKey && errKey !== hostLastErrKey) {
-          showToast(`Host data error: ${errs[0][0]} – ${errs[0][1].message || errs[0][1]}`);
-        }
-        hostLastErrKey = errKey;
-
-        const playerMap = new Map();
-        hostRows(rPlayers.data, "players").forEach((p) => playerMap.set(p.user_id, p));
-
-        const reqsOk = !rReqs.error;
-        const pending = reqsOk ? hostRows(rReqs.data) : [];
-        const st = rStats.error ? null : hostRow(rStats.data, "stats");
-
-        if (!rStats.error && !st) console.warn("[host] stats() returned no usable row:", rStats.data);
-        if (reqsOk && !pending.length) console.info("[host] requests query OK but returned 0 PENDING rows (if you expect rows, check RLS SELECT policy)");
-
-        // ---- Stats ----
-        if (st) {
-          hostLoaded.stats = true;
-          const pendingCount = reqsOk
-            ? pending.length
-            : (typeof st.pending_requests === "number" ? st.pending_requests : 0);
-
-          $("h-sum-profit").textContent = String(st.house_profit ?? 0);
-          $("h-sum-players").textContent = String(st.total_players ?? 0);
-          $("h-sum-pending").textContent = String(pendingCount);
-          $("h-req-dot").classList.toggle("hidden", pendingCount === 0);
-
-          const pot = Number(st.total_pot) || 0;
-          const profit = Number(st.house_profit) || 0;
-          const paid = Number(st.total_paid) || 0;
-          const settledCnt = Number(st.settled_rounds) || 0;
-          const deadCnt = Number(st.dead_rounds) || 0;
-          const totPl = Number(st.total_players) || 0;
-          const actPl = Number(st.active_players) || 0;
-
-          const housePct = pot > 0 ? Math.round((profit / pot) * 100) : 0;
-          const paidPct = pot > 0 ? Math.round((paid / pot) * 100) : 0;
-          const deadPct = settledCnt > 0 ? Math.round((deadCnt / settledCnt) * 100) : 0;
-          const actPct = totPl > 0 ? Math.round((actPl / totPl) * 100) : 0;
-
-          const bars = [
-            { label: "House profit today", val: `${profit} coins`, pct: pot > 0 ? Math.min(100, housePct * 2) : 0 },
-            { label: "House share of pot", val: `${housePct}%`, pct: housePct },
-            { label: "Paid out to players", val: `${paidPct}% (${paid})`, pct: paidPct },
-            { label: "Dead rounds", val: `${deadCnt} (${deadPct}%)`, pct: deadPct },
-            { label: "Players active today", val: `${actPl} of ${totPl}`, pct: actPct },
-            { label: "Total bet today", val: `${pot} coins`, pct: pot > 0 ? 100 : 0 },
-            { label: "Top-ups approved", val: `${st.topups_approved ?? 0} coins`, pct: (st.topups_approved ?? 0) > 0 ? 100 : 0 },
-            { label: "Total withdrawn", val: `${st.total_withdrawn ?? 0} coins`, pct: (st.total_withdrawn ?? 0) > 0 ? 100 : 0 }
-          ];
-
-          $("h-bars").innerHTML = bars.map((b) => `
-            <div class="stat-bar-row" style="margin-bottom:8px;">
-              <div class="stat-bar-head"><span>${b.label}</span><span>${b.val}</span></div>
-              <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${b.pct}%;"></div></div>
-            </div>
-          `).join("");
-        } else if (!hostLoaded.stats) {
-          // Only show an inline error if we've never had good data (don't wipe last-good numbers)
-          $("h-bars").innerHTML = hostErrHtml(
-            rStats.error
-              ? `Couldn't load stats: ${rStats.error.message || rStats.error}`
-              : "Stats returned no data."
-          );
-        }
-
-        // Keep the pending tile/dot right even if stats() failed
-        if (!st && reqsOk) {
-          $("h-sum-pending").textContent = String(pending.length);
-          $("h-req-dot").classList.toggle("hidden", pending.length === 0);
-        }
-
-        // ---- New-request beep ----
-        if (reqsOk) {
-          let hasNew = false;
-          pending.forEach((r) => {
-            if (!knownPendingIds.has(r.id)) {
-              if (!isInitial) hasNew = true;
-              knownPendingIds.add(r.id);
-            }
-          });
-          if (hasNew) {
-            playHostBeep();
-            showToast("New player request received!");
-          }
-        }
-
-        // ---- Request lists ----
-        if (reqsOk) {
-          hostLoaded.reqs = true;
-          renderRequestGroup("h-topup-list", "h-topup-count", pending.filter((r) => r.kind === "TOPUP"), playerMap);
-          renderRequestGroup("h-withdraw-list", "h-withdraw-count", pending.filter((r) => r.kind === "WITHDRAW"), playerMap);
-        } else if (!hostLoaded.reqs) {
-          const msg = `Couldn't load requests: ${rReqs.error.message || rReqs.error}`;
-          $("h-topup-list").innerHTML = hostErrHtml(msg);
-          $("h-withdraw-list").innerHTML = hostErrHtml(msg);
-        }
-
-        // ---- Recent decisions: prefer server history, fall back to local session list ----
-        if (!rDone.error && Array.isArray(rDone.data)) {
-          recentDecisions = rDone.data.map((r) => {
-            const pInfo = playerMap.get(r.user_id);
-            return {
-              id: String(r.id),
-              name: r.name || (pInfo && (pInfo.username || pInfo.name)) || "Player",
-              kind: r.kind,
-              amount: Number(r.amount),
-              approved: r.status === "APPROVED",
-              decidedAt: new Date(r.decided_at || r.created_at)
-                .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            };
-          });
-        } else if (rDone.error) {
-          console.warn("[host] decided-requests query failed (using local list):", rDone.error);
-        }
-        renderRecentDecisions();
-        const stEl = $("h-status");
-        if (stEl) {
-          const t = new Date().toLocaleTimeString();
-          stEl.style.color = errs.length ? "#ff9a9a" : "var(--h-muted)";
-          stEl.textContent = errs.length
-            ? `Error – ${errs.map(([src, e]) => src + ": " + (e.message || e)).join(" | ")}`
-            : `Updated ${t} · ${pending.length} pending`;
-        }
-      } catch (err) {
-        console.error("[host] refresh failed:", err);
-        if ($("h-status")) { $("h-status").style.color = "#ff9a9a"; $("h-status").textContent = "Error – " + (err.message || err); }
-        showToast("Host refresh failed: " + (err.message || err));
-      } finally {
-        hostRefreshing = false;
-        if (hostRefreshQueued) {
-          hostRefreshQueued = false;
-          refreshHostDashboard(false);
-        }
-      }
-    }
-
-    function renderRequestGroup(containerId, countId, items, playerMap) {
-      const el = $(containerId);
-      const countEl = $(countId);
-      countEl.textContent = String(items.length);
-      countEl.classList.toggle("has-items", items.length > 0);
-
-      if (!items.length) {
-        el.innerHTML = `<div style="font-size:12px;color:var(--h-muted);">None pending.</div>`;
-        return;
-      }
-      el.innerHTML = items.map((r) => {
-        const pInfo = playerMap.get(r.user_id);
-        const curBal = pInfo ? Number(pInfo.balance) : 0;
-        const pName = r.name || (pInfo && (pInfo.username || pInfo.name)) || "Player";
-        const timeStr = new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        const payload = encodeURIComponent(JSON.stringify({
-          id: r.id,
-          name: pName,
-          kind: r.kind,
-          amount: Number(r.amount)
-        }));
-        return `
-          <div class="req-card">
-            <div class="req-main-row">
-              <div class="req-info">
-                <div class="req-player-line">${esc(pName)} · <span style="color:var(--h-accent);">${Number(r.amount)} coins</span></div>
-                <div class="req-meta-line">Bal: ${curBal} · ${timeStr}</div>
-              </div>
-              <div class="req-btns">
-                <button class="h-btn h-btn-accent h-btn-icon" type="button" aria-label="Approve" title="Approve" onclick="hostDecideReq(${r.id}, true, '${payload}')">✓</button>
-                <button class="h-btn h-btn-icon" style="background:#6b1d24;border-color:#a8323c;" type="button" aria-label="Disapprove" title="Disapprove" onclick="hostDecideReq(${r.id}, false, '${payload}')">✕</button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function renderRecentDecisions() {
-      const el = $("h-decisions-list");
-      const countEl = $("h-decisions-count");
-      countEl.textContent = String(recentDecisions.length);
-      countEl.classList.remove("has-items");
-
-      if (!recentDecisions.length) {
-        el.innerHTML = `<div style="font-size:12px;color:var(--h-muted);">No recent decisions yet.</div>`;
-        return;
-      }
-
-      el.innerHTML = recentDecisions.map((d) => {
-        const signClass = d.approved ? "approved" : "disapproved";
-        const signLabel = d.approved ? "✓ Approved" : "✕ Disapproved";
-        const kindLabel = d.kind === "WITHDRAW" ? "Withdraw" : "Top-up";
-        return `
-          <div class="req-card">
-            <div class="req-main-row">
-              <div class="req-info">
-                <div class="req-player-line">${esc(d.name)} · <span style="color:var(--h-accent);">${d.amount} coins</span></div>
-                <div class="req-meta-line">${kindLabel} · ${d.decidedAt}</div>
-              </div>
-              <span class="decision-sign ${signClass}">${signLabel}</span>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    window.hostDecideReq = async function(reqId, ok, encodedMeta) {
-      haptic();
-      const { error } = await sb.rpc("decide", { p_request_id: reqId, p_ok: ok });
-      if (error) {
-        showToast(error.message);
-        return;
-      }
-
-      let meta = { id: reqId, name: "Player", kind: "TOPUP", amount: 0 };
-      if (encodedMeta) {
-        try {
-          meta = JSON.parse(decodeURIComponent(encodedMeta));
-        } catch (_) {}
-      }
-
-      recentDecisions = [
-        {
-          id: `${reqId}-${Date.now()}`,
-          name: meta.name,
-          kind: meta.kind,
-          amount: meta.amount,
-          approved: Boolean(ok),
-          decidedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        },
-        ...recentDecisions
-      ].slice(0, 15);
-
-      showToast(ok ? "✓ Approved" : "✕ Disapproved");
-      await refreshHostDashboard(false);
-    };
-
-    window.addEventListener("DOMContentLoaded", initApp);
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
-    }
-  </script>
+      card.querySelector("[data-select-slot]").textContent=activeSlot===slot?"Selected":"Use Slot "+slot;
+    });
+  }
+  function resetWheel(){const w=$("color-wheel");w.style.transition="none";w.style.transform="rotate(0deg)";void w.offsetWidth;w.style.transition="";}
+  function spinWheel(color){const deg={green:1740,orange:1620,blue:1500};const w=$("color-wheel");w.style.transition="transform 2.75s cubic-bezier(.12,.72,.12,1)";w.style.transform="rotate("+(deg[color]||1740)+"deg)";}
+  async function placeBet(slot){
+    if(!isBettingOpen())return toast("Betting is closed.","error");if(placedBets[slot])return;
+    const color=selectedColors[slot],stake=Number($("stake-"+slot).value),available=Number(state.available_balance??state.wallet??0);
+    if(!color)return toast("Choose a colour on the wheel first.","error");
+    if(!Number.isSafeInteger(stake)||stake<5||stake>10000)return toast("Stake must be between 5 and 10,000.","error");
+    if(stake>available)return toast("Insufficient available Balance.","error");
+    const btn=$("place-"+slot);btn.disabled=true;btn.textContent="Placing…";
+    const res=await sb.rpc("bw_place_bet",{p_slot:slot,p_color:color,p_stake:stake});
+    if(res.error){toast(res.error.message||"Unable to place bet.","error");btn.textContent="Place";renderSlots();return;}
+    toast("Bet placed in Slot "+slot+".");await loadState();
+  }
+  async function cancelBet(slot){
+    const bet=placedBets[slot];if(!bet||!isBettingOpen())return toast("This bet can no longer be cancelled.","error");
+    const btn=$("cancel-"+slot);btn.disabled=true;btn.textContent="Cancelling…";
+    const res=await sb.rpc("bw_cancel_bet",{p_bet_id:bet.id});
+    if(res.error){toast(res.error.message||"Unable to cancel bet.","error");btn.textContent="Cancel";btn.disabled=false;return;}
+    selectedColors[slot]=null;toast("Bet cancelled. "+money(res.data.stake_returned)+" returned to Balance.");await loadState();
+  }
+  async function loadLiveBets(roundId){
+    if(!roundId)return;const res=await sb.from("bw_live_bets").select("id,round_id,username,slot_index,color,stake,status").eq("round_id",roundId).eq("status","placed").order("id",{ascending:true});
+    if(res.error){console.warn("Live bets:",res.error.message);return;}
+    $("live-count").textContent=res.data.length+" bets";
+    $("live-bets").innerHTML=res.data.length?res.data.map(b=>'<div class="live-row"><div class="live-left"><span class="result-dot" style="background:'+(colorHex[b.color]||"#8995a9")+'"></span><span class="live-name">'+esc(b.username)+'</span><span class="slot-tag">S'+b.slot_index+'</span></div><strong>'+money(b.stake)+'</strong></div>').join(""):'<div class="empty">No bets yet</div>';
+  }
+  async function verifySeed(round){
+    if(!round?.server_seed_reveal||!round?.server_seed_hash)return "Seed will be revealed after settlement.";
+    try{const bytes=Uint8Array.from(round.server_seed_reveal.match(/.{1,2}/g).map(x=>parseInt(x,16)));const hash=await crypto.subtle.digest("SHA-256",bytes);const actual=Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");return actual===round.server_seed_hash?"Commit verified ✓":"Commit mismatch — contact the Host";}
+    catch{return "Unable to verify this device's seed hash.";}
+  }
+  async function renderResults(data){
+    const recent=data.recent_rounds||[];$("recent-results").innerHTML=recent.length?recent.map(r=>'<div class="result-chip"><span class="result-dot" style="background:'+(colorHex[r.winner_color]||"#8795a9")+'"></span><span>#'+money(r.id)+'</span></div>').join(""):'<span class="small">No results yet</span>';
+    const last=data.previous_round;if(!last){$("last-result-mini").innerHTML='<span class="muted">Last result —</span>';$("last-result-full").innerHTML='<span class="small">No completed round yet.</span>';$("last-fairness").textContent="Fairness verification appears after settlement.";return;}
+    $("last-result-mini").innerHTML='<span class="result-dot" style="background:'+colorHex[last.winner_color]+'"></span><strong>'+esc(colorLabel[last.winner_color])+'</strong>';
+    $("last-result-full").innerHTML='<span class="big-dot" style="background:'+colorHex[last.winner_color]+'"></span><div><strong>'+esc(colorLabel[last.winner_color])+'</strong><div class="small">Round #'+money(last.id)+' · Pot '+money(last.total_pot)+(last.dead_round?' · Dead round':'')+'</div></div>';
+    if(lastVerifiedRoundId!==last.id){lastVerifiedRoundId=last.id;$("last-fairness").textContent=await verifySeed(last)+" · Server seed: "+last.server_seed_reveal;}
+  }
+  async function loadLeaderboard(){
+    const now=new Date();const start=new Date(now);const day=(start.getDay()+6)%7;start.setHours(0,0,0,0);start.setDate(start.getDate()-day);
+    const res=await sb.rpc("bw_get_win_leaderboard",{p_start_at:start.toISOString(),p_end_at:now.toISOString(),p_limit:100});
+    if(res.error){$("leaderboard-podium").innerHTML="";$("leaderboard-list").innerHTML='<div class="empty">'+esc(res.error.message||"Unable to load leaderboard.")+'</div>';return;}
+    const rows=res.data||[];const medals=["🥇","🥈","🥉"];
+    $("leaderboard-podium").innerHTML=rows.slice(0,3).map((r,i)=>'<div class="leaderboard-podium-card '+(i===0?"first":"")+'"><div class="podium-rank">'+medals[i]+'</div><strong>'+esc(r.username||"Player")+'</strong><span>'+money(r.wins)+' winning bets</span></div>').join("")||'<div class="empty" style="grid-column:1/-1">No winning bets this week yet.</div>';
+    $("leaderboard-list").innerHTML=rows.length?rows.map(r=>'<div class="data-row"><div class="data-row-main"><strong>#'+money(r.rank)+' · '+esc(r.username||"Player")+'</strong><span>Winning bets this week</span></div><div class="data-row-side"><strong>'+money(r.wins)+'</strong><span class="small">wins</span></div></div>').join(""):'<div class="empty">Leaderboard scores will appear after the first winning bet.</div>';
+  }
+  async function loadPlayerHistory(reset){
+    if(reset){historyCursor=null;playerHistory=[];historyHasMore=false;}
+    const res=await sb.rpc("bw_get_my_history",{p_limit:50,p_before_id:historyCursor});
+    if(res.error){$("player-history-list").innerHTML='<div class="empty">'+esc(res.error.message)+'</div>';return;}
+    const items=res.data.items||[];playerHistory=reset?items:playerHistory.concat(items);historyCursor=res.data.next_before_id;historyHasMore=!!res.data.next_before_id;renderPlayerHistory();
+  }
+  function renderPlayerHistory(){
+    $("player-history-list").innerHTML=playerHistory.length?playerHistory.map(b=>'<div class="data-row"><div class="data-row-main"><strong>Round #'+money(b.round_id)+' · '+esc(colorLabel[b.color]||b.color)+' · Slot '+b.slot_index+'</strong><span>'+dateText(b.created_at)+' · Stake '+money(b.stake)+(b.winner_color?' · Result '+esc(colorLabel[b.winner_color]):'')+'</span></div><div class="data-row-side"><strong>'+(b.status==="won"?'<span class="amount-positive">+'+money(b.payout)+'</span>':b.status==="cancelled"?'<span class="muted">Cancelled</span>':b.status==="lost"?'<span class="amount-negative">−'+money(b.stake)+'</span>':'<span>'+money(b.stake)+'</span>')+'</strong><div><span class="status '+esc(b.status)+'">'+esc(b.status)+'</span></div></div></div>').join(""):'<div class="empty">No betting history yet.</div>';
+    $("load-more-history").classList.toggle("hidden",!historyHasMore);
+  }
+  async function loadBalanceLedger(){
+    const res=await sb.from("bw_ledger").select("id,entry_type,amount,balance_after,reference,created_at").order("id",{ascending:false}).limit(50);
+    if(res.error){$("balance-ledger-list").innerHTML='<div class="empty">'+esc(res.error.message)+'</div>';return;}
+    $("balance-ledger-list").innerHTML=res.data.length?res.data.map(row=>'<div class="data-row"><div class="data-row-main"><strong>'+esc(row.entry_type.replaceAll("_"," "))+'</strong><span>'+dateText(row.created_at)+(row.reference?' · '+esc(row.reference):'')+'</span></div><div class="data-row-side"><strong class="'+(row.amount>0?'amount-positive':'amount-negative')+'">'+(row.amount>0?'+':'')+money(row.amount)+'</strong><div class="small">Balance '+money(row.balance_after)+'</div></div></div>').join(""):'<div class="empty">No Balance entries yet.</div>';
+  }
+  async function loadMyRequests(){
+    const res=await sb.rpc("bw_get_my_requests",{p_limit:50,p_before_id:null});
+    if(res.error){$("my-requests-list").innerHTML='<div class="empty">'+esc(res.error.message)+'</div>';return;}
+    requestHistory=res.data.items||[];renderMyRequests();
+  }
+  function renderMyRequests(){
+    $("my-requests-list").innerHTML=requestHistory.length?requestHistory.map(r=>'<div class="data-row"><div class="data-row-main"><strong>'+esc(r.request_type==="deposit"?"Deposit":"Withdraw")+' · '+money(r.amount)+' Balance</strong><span>'+dateText(r.created_at)+(r.note?' · '+esc(r.note):'')+'</span>'+(r.processing_note?'<span>'+esc(r.processing_note)+'</span>':'')+'</div><div class="data-row-side"><span class="status '+esc(r.status)+'">'+esc(r.status)+'</span>'+(r.status==="pending"?'<div style="margin-top:6px"><button class="btn danger tiny" data-cancel-request="'+r.request_id+'">Cancel</button></div>':'')+'</div></div>').join(""):'<div class="empty">No requests yet.</div>';
+  }
+  async function submitBalanceRequest(){
+    const type=$("request-type").value,amount=Number($("request-amount").value),note=$("request-note").value.trim()||null;
+    if(!Number.isSafeInteger(amount)||amount<=0)return toast("Enter a valid amount.","error");
+    if(type==="withdraw"&&amount>Number(state?.available_balance??state?.wallet??0))return toast("Insufficient available Balance.","error");
+    const btn=$("submit-balance-request");btn.disabled=true;btn.textContent="Submitting…";
+    const res=await sb.rpc("bw_submit_balance_request",{p_type:type,p_amount:amount,p_note:note});btn.disabled=false;btn.textContent="Submit request";
+    if(res.error)return toast(res.error.message||"Unable to submit request.","error");
+    $("request-amount").value="";$("request-note").value="";toast(type==="withdraw"?"Withdraw request submitted. Amount reserved.":"Deposit request submitted.");
+    await loadState();await loadMyRequests();
+  }
+  async function cancelMyRequest(id){
+    const res=await sb.rpc("bw_cancel_balance_request",{p_request_id:Number(id)});
+    if(res.error)return toast(res.error.message||"Unable to cancel request.","error");
+    toast("Request cancelled. Any reservation has been released.");await loadState();await loadMyRequests();
+  }
+  async function loadHostDashboard(){
+    if(!isHost||mode!=="host")return;const res=await sb.rpc("bw_admin_dashboard");
+    if(res.error){toast(res.error.message||"Unable to load Host dashboard.","error");return;}
+    hostData=res.data;const r=hostData.current_round;
+    $("host-round-id").textContent=r?"Round #"+money(r.id):"No active round";
+    $("host-game-status").textContent=String(hostData.game_status||"—").toUpperCase();
+    $("host-active-players").textContent=money(hostData.active_players||0);
+    $("host-betting-activity").textContent=money(hostData.total_betting_activity||0);
+    $("host-pending-requests").textContent=money(hostData.pending_requests||0);
+    const pill=$("host-round-phase");pill.className="phase-pill"+(r?.status==="revealing"?" revealing":"");
+    pill.innerHTML='<span class="phase-dot"></span>'+(r?.status==="revealing"?"REVEALING":r?.status==="open"?"BETTING OPEN":"NO ROUND");updateClocks();
+    if(activePage==="balances")renderHostBalances();
+  }
+  async function loadHostHistory(){
+    const res=await sb.rpc("bw_admin_history",{p_limit:50});
+    if(res.error){$("host-history-list").innerHTML='<div class="empty">'+esc(res.error.message)+'</div>';return;}
+    hostHistory=res.data;renderHostHistory();
+  }
+  function renderHostHistory(){
+    if(!hostHistory)return;const rows=hostHistory[hostHistoryTab]||[];let html="";
+    if(hostHistoryTab==="rounds")html=rows.map(r=>'<div class="data-row"><div class="data-row-main"><strong>Round #'+money(r.id)+' · '+(r.winner_color?esc(colorLabel[r.winner_color]):esc(r.status))+'</strong><span>'+dateText(r.settled_at||r.starts_at)+' · Pot '+money(r.total_pot)+(r.dead_round?' · Dead round':'')+'</span></div><div class="data-row-side"><strong>'+money(r.house_amount||0)+'</strong><div class="small">House</div></div></div>').join("");
+    else if(hostHistoryTab==="bets")html=rows.map(b=>'<div class="data-row"><div class="data-row-main"><strong>'+esc(b.username)+' · Round #'+money(b.round_id)+' · '+esc(colorLabel[b.color]||b.color)+' / S'+b.slot_index+'</strong><span>'+dateText(b.created_at)+' · '+esc(b.status)+'</span></div><div class="data-row-side"><strong>'+money(b.stake)+'</strong><div class="small">Payout '+money(b.payout)+'</div></div></div>').join("");
+    else if(hostHistoryTab==="balance_ledger")html=rows.map(l=>'<div class="data-row"><div class="data-row-main"><strong>'+esc(l.username||"Deleted player")+' · '+esc(l.entry_type.replaceAll("_"," "))+'</strong><span>'+dateText(l.created_at)+' · '+esc(l.reference||"")+'</span></div><div class="data-row-side"><strong class="'+(l.amount>0?'amount-positive':'amount-negative')+'">'+(l.amount>0?'+':'')+money(l.amount)+'</strong><div class="small">After '+money(l.balance_after)+'</div></div></div>').join("");
+    else html=rows.map(r=>'<div class="data-row"><div class="data-row-main"><strong>'+esc(r.username)+' · '+esc(r.request_type)+' · '+money(r.amount)+'</strong><span>'+dateText(r.created_at)+(r.processing_note?' · '+esc(r.processing_note):'')+'</span></div><div class="data-row-side"><span class="status '+esc(r.status)+'">'+esc(r.status)+'</span></div></div>').join("");
+    $("host-history-list").innerHTML=html||'<div class="empty">No records in this section yet.</div>';
+  }
+  function renderHostBalances(){
+    if(!hostData?.players)return;
+    $("host-player-balances").innerHTML=hostData.players.length?hostData.players.map(p=>'<div class="player-balance-card"><div class="player-balance-head"><strong>'+esc(p.username)+'</strong><strong>'+money(p.balance)+' Balance</strong></div><div class="player-balance-values"><span>Available <b>'+money(p.available_balance)+'</b></span><span>Reserved <b>'+money(p.reserved_balance)+'</b></span><span>Joined '+dateText(p.created_at)+'</span></div></div>').join(""):'<div class="empty">No player accounts yet.</div>';
+    const select=$("adjust-player"),old=select.value;select.innerHTML=hostData.players.map(p=>'<option value="'+esc(p.user_id)+'">'+esc(p.username)+' · '+money(p.balance)+'</option>').join("");if(old)select.value=old;
+  }
+  async function applyHostAdjustment(){
+    const player=$("adjust-player").value,amount=Number($("adjust-amount").value),reason=$("adjust-reason").value.trim();
+    if(!player||!Number.isSafeInteger(amount)||amount===0||!reason){$("adjust-message").textContent="Choose a player, enter a non-zero amount, and provide a reason.";return;}
+    const res=await sb.rpc("bw_admin_adjust",{p_user_id:player,p_amount:amount,p_reason:reason});
+    if(res.error){$("adjust-message").textContent=res.error.message;return;}
+    $("adjust-message").textContent="Balance adjustment recorded.";$("adjust-amount").value="";$("adjust-reason").value="";await loadHostDashboard();toast("Balance adjustment recorded.");
+  }
+  async function loadHostRequests(){
+    const res=await sb.rpc("bw_admin_list_balance_requests",{p_status:"pending",p_limit:100});
+    if(res.error){$("host-requests-list").innerHTML='<div class="empty">'+esc(res.error.message)+'</div>';return;}
+    const rows=res.data.requests||[];
+    $("host-requests-list").innerHTML=rows.length?rows.map(r=>'<div class="host-request"><div class="host-request-head"><div><strong>'+esc(r.username)+'</strong><div class="host-request-meta">'+esc(r.request_type==="deposit"?"Deposit":"Withdraw")+' · '+money(r.amount)+' Balance · '+dateText(r.created_at)+'</div></div><span class="status pending">Pending</span></div><div class="host-request-meta">Current Balance: '+money(r.balance)+' · Available: '+money(r.available_balance)+' · Reserved: '+money(r.reserved_balance)+'</div>'+(r.note?'<div class="host-request-meta">Note: '+esc(r.note)+'</div>':'')+'<div class="host-request-actions"><button class="btn primary tiny" data-review-request="approve" data-request-id="'+r.request_id+'">Approve</button><button class="btn danger tiny" data-review-request="reject" data-request-id="'+r.request_id+'">Reject</button></div></div>').join(""):'<div class="empty">No pending requests.</div>';
+  }
+  async function reviewHostRequest(id,decision){
+    let reason=null;if(decision==="reject"){reason=prompt("Why are you rejecting this request?");if(reason===null)return;reason=reason.trim();if(!reason)return toast("A rejection reason is required.","error");}
+    const res=await sb.rpc("bw_admin_review_balance_request",{p_request_id:Number(id),p_decision:decision,p_reason:reason});
+    if(res.error)return toast(res.error.message||"Unable to review request.","error");
+    toast(decision==="approve"?"Request approved.":"Request rejected.");await loadHostRequests();await loadHostDashboard();
+  }
+  async function signOut(){
+    await sb.auth.signOut();user=null;state=null;isHost=false;if(pollTimer)clearInterval(pollTimer);if(hostPollTimer)clearInterval(hostPollTimer);if(clockTimer)clearInterval(clockTimer);showAuth(true);
+  }
+
+  $("sign-in").addEventListener("click",()=>authAction("signin"));
+  $("create-account").addEventListener("click",()=>{if(!signupMode){setSignupMode(true);return;}authAction("signup");});
+  $("back-to-signin").addEventListener("click",()=>setSignupMode(false));
+  $("password").addEventListener("keydown",e=>{if(e.key==="Enter")authAction(signupMode?"signup":"signin");});
+  $("signup-username").addEventListener("keydown",e=>{if(e.key==="Enter")authAction("signup");});
+  $("sign-out").addEventListener("click",signOut);$("host-switch").addEventListener("click",()=>switchMode(mode==="host"?"player":"host"));
+  document.querySelectorAll("[data-player-page]").forEach(b=>b.addEventListener("click",()=>setActivePlayerPage(b.dataset.playerPage)));
+  document.querySelectorAll("[data-open-page]").forEach(b=>b.addEventListener("click",()=>setActivePlayerPage(b.dataset.openPage)));
+  document.querySelectorAll("[data-host-page]").forEach(b=>b.addEventListener("click",()=>setActiveHostPage(b.dataset.hostPage)));
+  document.querySelectorAll("[data-select-slot]").forEach(b=>b.addEventListener("click",()=>{activeSlot=Number(b.dataset.selectSlot);renderWheel();renderSlots();}));
+  document.querySelectorAll("[data-slot-card]").forEach(card=>card.addEventListener("click",e=>{if(e.target.closest("button,input"))return;activeSlot=Number(card.dataset.slotCard);renderWheel();renderSlots();}));
+  $("color-wheel").addEventListener("click",e=>{const path=e.target.closest("path[data-color]");if(!path)return;if(!isBettingOpen()||placedBets[activeSlot])return;selectedColors[activeSlot]=path.dataset.color;renderWheel();renderSlots();});
+  [1,2].forEach(slot=>{$("place-"+slot).addEventListener("click",()=>placeBet(slot));$("cancel-"+slot).addEventListener("click",()=>cancelBet(slot));$("stake-"+slot).addEventListener("input",renderSlots);});
+  document.querySelectorAll(".stake-chip").forEach(b=>b.addEventListener("click",()=>{const slot=Number(b.dataset.slot);if(placedBets[slot]||!isBettingOpen())return;const input=$("stake-"+slot);input.value=Number(input.value||0)+Number(b.dataset.amount);renderSlots();}));
+  $("toggle-results").addEventListener("click",()=>{resultsExpanded=!resultsExpanded;$("recent-strip").classList.toggle("expanded",resultsExpanded);$("toggle-results").textContent=resultsExpanded?"Collapse":"Expand";});
+  $("refresh-player-history").addEventListener("click",()=>loadPlayerHistory(true));$("load-more-history").addEventListener("click",()=>loadPlayerHistory(false));$("refresh-leaderboard").addEventListener("click",loadLeaderboard);$("refresh-ledger").addEventListener("click",loadBalanceLedger);$("refresh-my-requests").addEventListener("click",loadMyRequests);$("submit-balance-request").addEventListener("click",submitBalanceRequest);
+  $("request-type").addEventListener("change",()=>{$("request-available-note").textContent=$("request-type").value==="withdraw"?"Available Balance: "+money(state?.available_balance??state?.wallet??0)+". This amount is reserved while the Host reviews your request.":"The Host reviews your request. Approved amounts are added to your Game Balance.";});
+  $("my-requests-list").addEventListener("click",e=>{const b=e.target.closest("[data-cancel-request]");if(b)cancelMyRequest(b.dataset.cancelRequest);});
+  $("refresh-host-dashboard").addEventListener("click",loadHostDashboard);$("refresh-host-history").addEventListener("click",loadHostHistory);$("refresh-host-balances").addEventListener("click",async()=>{await loadHostDashboard();renderHostBalances();});$("refresh-host-requests").addEventListener("click",loadHostRequests);$("apply-adjustment").addEventListener("click",applyHostAdjustment);
+  $("host-requests-list").addEventListener("click",e=>{const b=e.target.closest("[data-review-request]");if(b)reviewHostRequest(b.dataset.requestId,b.dataset.reviewRequest);});
+  document.querySelectorAll("[data-host-history-tab]").forEach(b=>b.addEventListener("click",()=>{hostHistoryTab=b.dataset.hostHistoryTab;document.querySelectorAll("[data-host-history-tab]").forEach(x=>x.classList.toggle("active",x===b));renderHostHistory();}));
+
+  sb.auth.getSession().then(({data})=>{if(data.session){user=data.session.user;enterApp();}});
+  sb.auth.onAuthStateChange((_event,session)=>{if(session?.user&&!user){user=session.user;enterApp();}if(!session&&user){user=null;if(pollTimer)clearInterval(pollTimer);if(hostPollTimer)clearInterval(hostPollTimer);showAuth(true);}});
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("Service worker:",e));
+})();
+</script>
 </body>
 </html>
