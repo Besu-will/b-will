@@ -1,7 +1,7 @@
 {
   "name": "B-Will",
   "short_name": "B-Will",
-  "description": "B-Will virtual coin colour game",
+  "description": "B-Will virtual colour game. Game Balance has no cash value.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
