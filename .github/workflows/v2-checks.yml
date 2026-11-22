@@ -1,0 +1,20 @@
+name: B-Will V2 checks
+
+on:
+  push:
+    branches: [v2-rebuild]
+  pull_request:
+    branches: [v2-rebuild]
+
+permissions:
+  contents: read
+
+jobs:
+  inline-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check inline JavaScript syntax
+        run: node scripts/check-inline-js.mjs
