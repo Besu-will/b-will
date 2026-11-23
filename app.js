@@ -13,7 +13,7 @@ function mountNavigation(){
  root.insertBefore(nav,foot);
  function go(id){pages.querySelectorAll('.tab-page').forEach(p=>p.classList.toggle('active',p.dataset.page===id));nav.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.go===id));}
  nav.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b&&!b.classList.contains('hidden'))go(b.dataset.go)});
- window.bwShowAdminNav=enabled=>nav.querySelector('.admin-nav').classList.toggle('hidden',!enabled);
+ window.bwShowAdminNav=enabled=>{nav.querySelector('.admin-nav').classList.toggle('hidden',!enabled);nav.querySelector('[data-go="wallet"]').classList.toggle('hidden',!!enabled);nav.querySelector('[data-go="activity"]').classList.toggle('hidden',!!enabled);if(enabled&&['wallet','activity'].includes(pages.querySelector('.tab-page.active')?.dataset.page))go('admin')};
  go('home');
 }
 mountNavigation();
