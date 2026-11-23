@@ -5,15 +5,29 @@ function mountNavigation(){
  const root=$('app'),stats=root.querySelector('.stats'),main=root.querySelector('.main-grid'),primary=main.firstElementChild,side=main.querySelector('.side-stack'),primaryPanels=[...primary.children],sidePanels=[...side.children],admin=$('admin-panel'),foot=root.querySelector('.foot');
  const pages=document.createElement('div');pages.className='page-stack';pages.id='page-stack';
  const make=(id)=>{const p=document.createElement('section');p.className='tab-page';p.dataset.page=id;pages.appendChild(p);return p};
- const home=make('home'),wallet=make('wallet'),rank=make('rank'),activity=make('activity'),adminPage=make('admin');
- home.append(stats,primaryPanels[0]);wallet.append(primaryPanels[1]);rank.append(sidePanels[0]);activity.append(sidePanels[1],sidePanels[2]);adminPage.append(admin);
+ const home=make('home'),wallet=make('wallet'),rank=make('rank'),activity=make('activity'),platform=make('platform'),adminPage=make('admin');
+ home.append(stats,primaryPanels[0]);wallet.append(primaryPanels[1]);rank.append(sidePanels[0]);activity.append(sidePanels[1],sidePanels[2]);
+ const adminGrid=admin.querySelector('.admin-grid'),settingsColumn=adminGrid.children[0],platformColumn=adminGrid.children[1];
+ const platformPanel=document.createElement('section');platformPanel.className='panel';
+ const platformHead=document.createElement('div');platformHead.className='panel-head';platformHead.innerHTML='<div><div class="eyebrow gold">Administrator · platform</div><h2>Platform Overview</h2></div>';
+ platformPanel.append(platformHead,platformColumn);
+ platform.append($('house-stat'),platformPanel);
+ adminGrid.replaceChildren(settingsColumn);
+ adminPage.append(admin);
  main.replaceWith(pages);
  const nav=document.createElement('nav');nav.className='bottom-nav';nav.setAttribute('aria-label','Main navigation');
- nav.innerHTML='<button class="nav-item active" data-go="home"><span class="nav-icon">⌂</span><span>Home</span></button><button class="nav-item" data-go="wallet"><span class="nav-icon">◇</span><span>Wallet</span></button><button class="nav-item" data-go="rank"><span class="nav-icon">♛</span><span>Rankings</span></button><button class="nav-item" data-go="activity"><span class="nav-icon">◷</span><span>Activity</span></button><button class="nav-item admin-nav hidden" data-go="admin"><span class="nav-icon">⚙</span><span>Admin</span></button>';
+ nav.innerHTML='<button class="nav-item active" data-go="home"><span class="nav-icon">⌂</span><span>Home</span></button><button class="nav-item" data-go="rank"><span class="nav-icon">♛</span><span>Rankings</span></button><button class="nav-item platform-nav hidden" data-go="platform"><span class="nav-icon">▦</span><span>Platform</span></button><button class="nav-item admin-nav hidden" data-go="admin"><span class="nav-icon">⚙</span><span>Admin</span></button><button class="nav-item player-wallet" data-go="wallet"><span class="nav-icon">◇</span><span>Wallet</span></button><button class="nav-item player-activity" data-go="activity"><span class="nav-icon">◷</span><span>Activity</span></button>';
  root.insertBefore(nav,foot);
  function go(id){pages.querySelectorAll('.tab-page').forEach(p=>p.classList.toggle('active',p.dataset.page===id));nav.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.go===id));}
  nav.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b&&!b.classList.contains('hidden'))go(b.dataset.go)});
- window.bwShowAdminNav=enabled=>{nav.querySelector('.admin-nav').classList.toggle('hidden',!enabled);nav.querySelector('[data-go="wallet"]').classList.toggle('hidden',!!enabled);nav.querySelector('[data-go="activity"]').classList.toggle('hidden',!!enabled);if(enabled&&['wallet','activity'].includes(pages.querySelector('.tab-page.active')?.dataset.page))go('admin')};
+ window.bwShowAdminNav=enabled=>{
+  nav.querySelector('.admin-nav').classList.toggle('hidden',!enabled);
+  nav.querySelector('.platform-nav').classList.toggle('hidden',!enabled);
+  nav.querySelector('.player-wallet').classList.toggle('hidden',!!enabled);
+  nav.querySelector('.player-activity').classList.toggle('hidden',!!enabled);
+  if(enabled&&['wallet','activity'].includes(pages.querySelector('.tab-page.active')?.dataset.page))go('home');
+  if(!enabled&&['admin','platform'].includes(pages.querySelector('.tab-page.active')?.dataset.page))go('home');
+ };
  go('home');
 }
 mountNavigation();
