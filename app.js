@@ -53,7 +53,7 @@ $('auth-form').onsubmit=async e=>{e.preventDefault();$('auth-submit').disabled=t
 function isAdmin(){return !!(me&&me.is_admin&&user&&cfg.adminEmail&&String(user.email||'').toLowerCase()===String(cfg.adminEmail).toLowerCase())}
 function showApp(){ $('auth').classList.add('hidden');$('app').classList.remove('hidden')}
 async function enterApp(){if(!user||entering)return;entering=true;let timer;showApp();$('auth-msg').textContent='';try{await Promise.race([refreshAll(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('The app is taking too long to load. Please check your connection; you are signed in and can retry refresh.')),20000)})]);$('role-pill').textContent=isAdmin()?'ADMIN':'PLAYER';$('house-stat').classList.toggle('hidden',!isAdmin());$('admin-panel').classList.toggle('hidden',!isAdmin());if(window.bwShowAdminNav)window.bwShowAdminNav(isAdmin());subscribe();history().catch(()=>{});}catch(e){toast(e.message||String(e))}finally{if(timer)clearTimeout(timer);entering=false}}
-async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){selectedCup=null;lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).order('bet_slot');myBets=b.data||[];gameState=r[7]||{};selectedCup=null;activeSlot=myBets.some(x=>x.bet_slot===1&&!x.guesses?.length)?2:1;profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
+async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){selectedCup=null;lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).order('bet_slot');myBets=b.data||[];gameState=r[7]||{};activeSlot=myBets.some(x=>x.bet_slot===1&&!x.guesses?.length)?2:1;profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
 function profile(){$('available').textContent=money(me.available);if($('screen-balance'))$('screen-balance').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
 function arrangeCups(){
@@ -64,7 +64,7 @@ function arrangeCups(){
  const place=identityOrder=>{
   identityOrder.forEach((identity,index)=>{
    const b=buttons.find(x=>Number(x.dataset.identity)===identity);
-   if(b){b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);}
+   if(b){b.dataset.cup=String(index+1);b.style.order=String(index);b.querySelector('.cup-label').textContent=String(index+1);}
   });
  };
  const phase=round&&round.phase;
@@ -119,8 +119,8 @@ function renderRound(){
  });
  document.querySelectorAll('.cup').forEach(b=>{
   const position=Number(b.dataset.cup),win=phase==='reveal'&&Number(round.revealed_cup)===position;
-  const token=b.querySelector('.item-token');
-  token.classList.toggle('hidden',!(phase==='preview'&&position===2));
+  const ball=$('reveal-ball');
+  ball.classList.toggle('hidden',phase!=='preview');
   b.classList.toggle('selected',phase==='picking'&&selectedCup===position);
   b.classList.toggle('winner',win);
   b.classList.toggle('preview-lift',phase==='preview'&&position===2);
@@ -130,6 +130,7 @@ function renderRound(){
  });
  $('bet-note').textContent='Minimum stake '+money(settings.min_stake||5)+' · Each panel places one independent bet.';
 }
+document.querySelectorAll('.bet-card').forEach(card=>card.addEventListener('click',e=>{if(e.target.closest('button,input'))return;const slot=Number(card.dataset.slot);if(selectedCup&&!myBets.some(x=>Number(x.bet_slot)===slot&&x.guesses?.length)){activeSlot=slot;renderRound()}}));
 document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
  if(round?.phase!=='picking')return;
  const cup=Number(b.dataset.cup);
