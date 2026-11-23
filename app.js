@@ -54,7 +54,7 @@ function isAdmin(){return !!(me&&me.is_admin&&user&&cfg.adminEmail&&String(user.
 function showApp(){ $('auth').classList.add('hidden');$('app').classList.remove('hidden')}
 async function enterApp(){if(!user||entering)return;entering=true;let timer;showApp();$('auth-msg').textContent='';try{await Promise.race([refreshAll(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('The app is taking too long to load. Please check your connection; you are signed in and can retry refresh.')),20000)})]);$('role-pill').textContent=isAdmin()?'ADMIN':'PLAYER';$('house-stat').classList.toggle('hidden',!isAdmin());$('admin-panel').classList.toggle('hidden',!isAdmin());if(window.bwShowAdminNav)window.bwShowAdminNav(isAdmin());subscribe();history().catch(()=>{});}catch(e){toast(e.message||String(e))}finally{if(timer)clearTimeout(timer);entering=false}}
 async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){picks=[];lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).maybeSingle();myBet=b.data||null;gameState=r[7]||{};picks=(gameState.guesses||myBet?.guesses||[]).map(Number);profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
-function profile(){$('available').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
+function profile(){$('available').textContent=money(me.available);if($('screen-balance'))$('screen-balance').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
 function arrangeCups(){
  const wrap=document.querySelector('.cups');
@@ -94,11 +94,11 @@ function arrangeCups(){
     after.forEach(b=>{
      const old=before.get(b),now=b.getBoundingClientRect();
      if(!old)return;
-     const dx=old.left-now.left,dy=old.top-now.top,tilt=(Number(b.dataset.identity)%2?1:-1)*(12+(Math.abs(dx)/28));
-     b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px) rotate('+tilt+'deg) scale(.97)';
+     const dx=old.left-now.left,dy=old.top-now.top,tilt=(Number(b.dataset.identity)%2?1:-1)*(14+(Math.abs(dx)/28));
+     b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px) rotate('+tilt+'deg) rotateY(0deg) scale(.97)';
     });
     requestAnimationFrame(()=>{
-     after.forEach(b=>{b.style.transition='transform 300ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0) rotate(0deg) scale(1)';});
+     after.forEach(b=>{b.style.transition='transform 300ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0) rotate(0deg) rotateY(360deg) scale(1)';});
      setTimeout(()=>after.forEach(b=>{b.style.transition='';b.style.transform='';}),280);
     });
    };
