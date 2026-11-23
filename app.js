@@ -56,34 +56,58 @@ async function enterApp(){if(!user||entering)return;entering=true;let timer;show
 async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){picks=[];lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).maybeSingle();myBet=b.data||null;gameState=r[7]||{};picks=(gameState.guesses||myBet?.guesses||[]).map(Number);profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
 function profile(){$('available').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 function arrangeCups(){
- const wrap=document.querySelector('.cups'),buttons=[...wrap.querySelectorAll('.cup')];
- buttons.forEach(b=>{if(!b.dataset.identity)b.dataset.identity=b.dataset.cup;});
+ const wrap=document.querySelector('.cups');
+ let buttons=[...wrap.querySelectorAll('.cup')];
+ buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=b.dataset.cup||String(i+1);});
  const order=(gameState&&gameState.shuffle_order||[]).map(Number);
- if(['shuffle','picking','reveal'].includes(round.phase)&&order.length===3){
-  if(round.phase==='shuffle'){
-   const key=round.round_id+':'+order.join('');
-   if(lastRenderedShuffle!==key){
-    const width=buttons[0]?.offsetWidth||110,gap=12;
-    buttons.forEach(b=>{
-     const identity=Number(b.dataset.identity),destination=order.indexOf(identity)+1;
-     const dx=(destination-identity)*(width+gap);
-     const mid=(identity===1?1:identity===2?-2:1)*(width+gap);
-     b.style.setProperty('--dx',dx+'px');b.style.setProperty('--mid',mid+'px');b.style.setProperty('--mid-reverse',(-mid)+'px');
-     b.classList.remove('shuffle-run');void b.offsetWidth;b.classList.add('shuffle-run');
-    });
-    lastRenderedShuffle=key;
-   }
-  }else{
-   order.forEach((identity,index)=>{
-    const b=buttons.find(x=>Number(x.dataset.identity)===identity);
-    if(b){b.classList.remove('shuffle-run');b.style.transform='';b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);wrap.appendChild(b);}
-   });
-  }
- }else if(round.phase==='betting'||round.phase==='preview'){
-  buttons.sort((a,b)=>Number(a.dataset.identity)-Number(b.dataset.identity)).forEach((b,index)=>{
-   b.classList.remove('shuffle-run');b.style.transform='';b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);wrap.appendChild(b);
+ const place=(identityOrder)=>{
+  identityOrder.forEach((identity,index)=>{
+   const b=buttons.find(x=>Number(x.dataset.identity)===identity);
+   if(b){b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);wrap.appendChild(b);}
   });
-  if(round.phase==='preview')lastRenderedShuffle=null;
+ };
+ const phase=round&&round.phase;
+ if(phase==='shuffle'&&order.length===3){
+  const key=round.round_id+':'+order.join('');
+  if(lastRenderedShuffle!==key){
+   lastRenderedShuffle=key;
+   const current=buttons.slice().sort((x,y)=>Number(x.dataset.cup)-Number(y.dataset.cup)).map(b=>Number(b.dataset.identity));
+   const steps=[];
+   let working=current.slice();
+   // A chain of ordinary position swaps: cups stay upright-side-down and slide only.
+   for(let i=0;i<5;i++){
+    let x=i%3,y=(i+1+(i%2))%3;if(x===y)y=(y+1)%3;
+    [working[x],working[y]]=[working[y],working[x]];
+    steps.push(working.slice());
+   }
+   if(working.join('')!==order.join('')){
+    for(let i=0;i<3;i++){
+     const target=order[i],at=working.indexOf(target);
+     if(at!==i){[working[i],working[at]]=[working[at],working[i]];steps.push(working.slice());}
+    }
+   }
+   const animateOrder=next=>{
+    const before=new Map([...wrap.querySelectorAll('.cup')].map(b=>[b, b.getBoundingClientRect()]));
+    next.forEach(id=>{const b=buttons.find(x=>Number(x.dataset.identity)===id);if(b)wrap.appendChild(b);});
+    const after=[...wrap.querySelectorAll('.cup')];
+    after.forEach(b=>{
+     const old=before.get(b),now=b.getBoundingClientRect();
+     if(!old)return;
+     const dx=old.left-now.left,dy=old.top-now.top;
+     b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px)';
+    });
+    requestAnimationFrame(()=>{
+     after.forEach(b=>{b.style.transition='transform 360ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0)';});
+     setTimeout(()=>after.forEach(b=>{b.style.transition='';b.style.transform='';}),390);
+    });
+   };
+   steps.forEach((step,index)=>setTimeout(()=>animateOrder(step),index*440));
+   setTimeout(()=>place(order),steps.length*440+420);
+  }
+ }else if(['picking','reveal'].includes(phase)&&order.length===3){
+  place(order);
+ }else if(phase==='betting'||phase==='preview'){
+  place([1,2,3]);lastRenderedShuffle=null;
  }
 }
 function renderRound(){
