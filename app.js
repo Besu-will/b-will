@@ -153,7 +153,7 @@ function renderRound(){
   slot.disabled=phase!=='picking'||picks.length>0||!cup;
  });
  $('submit-guesses').disabled=phase!=='picking'||!myBet||picks.length>0||selectionSlots.length===0;
- $('submit-guesses').textContent=selectionSlots.length===1?'Confirm 1 Pick':selectionSlots.length===2?'Confirm 2 Picks':'Confirm Picks';
+ $('submit-guesses').textContent=phase!=='picking'||!myBet?'PICKS LOCKED':selectionSlots.length===1?'CONFIRM 1 PICK':selectionSlots.length===2?'CONFIRM 2 PICKS':'CHOOSE CUPS';
  $('bet-note').textContent=myBet?'Your stake: '+money(myBet.stake):'Minimum stake '+money(settings.min_stake)+' · One stake per round.';
 }
 document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
