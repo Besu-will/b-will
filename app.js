@@ -61,7 +61,27 @@ function arrangeCups(){
  const wrap=document.querySelector('.cups'),buttons=[...wrap.querySelectorAll('.cup')];
  buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=String(i+1)});
  const order=(gameState&&gameState.shuffle_order||[]).map(Number);
- const place=ids=>ids.forEach((identity,index)=>{const b=buttons.find(x=>Number(x.dataset.identity)===identity);if(b){b.dataset.cup=String(index+1);b.style.gridColumnStart=String(index+1);}});
+ const cupFor=id=>buttons.find(x=>Number(x.dataset.identity)===id);
+ const place=ids=>ids.forEach((identity,index)=>{const b=cupFor(identity);if(b){b.dataset.cup=String(index+1);b.style.gridColumnStart=String(index+1)}});
+ const glideTo=ids=>{
+  const before=new Map(buttons.map(b=>[b,b.getBoundingClientRect()]));
+  place(ids);
+  const moves=[];
+  buttons.forEach((b,i)=>{
+   const a=before.get(b),z=b.getBoundingClientRect(),dx=a.left-z.left,dy=a.top-z.top;
+   if(Math.abs(dx)+Math.abs(dy)<1)return;
+   b.style.transition='none';
+   b.style.transform='translate3d('+dx+'px,'+dy+'px,0) rotateZ('+(dx>0?-5:5)+'deg) scale(1.035)';
+   moves.push(b);
+  });
+  void wrap.offsetWidth;
+  requestAnimationFrame(()=>moves.forEach((b,i)=>{
+   b.style.transition='transform 520ms cubic-bezier(.16,.82,.22,1)';
+   b.style.transform='';
+   b.style.transitionDelay=(i*28)+'ms';
+   setTimeout(()=>{b.style.transition='';b.style.transitionDelay=''},590+i*28);
+  }));
+ };
  const phase=round?.phase;
  if(phase==='shuffle'&&order.length===3){
   const key=round.round_id+':'+order.join('');
@@ -69,17 +89,18 @@ function arrangeCups(){
    lastRenderedShuffle=key;
    let current=[1,2,3],step=0;
    const swap=()=>{
-    const a=step%3,b=(step+1+Math.floor(step/3))%3;
+    const pairs=[[0,2],[0,1],[1,2],[0,2],[1,0],[2,1]];
+    const [a,b]=pairs[step%pairs.length];
     [current[a],current[b]]=[current[b],current[a]];
-    place(current);
-    buttons.forEach((cup,k)=>{cup.classList.remove('cup-spinning');void cup.offsetWidth;cup.style.setProperty('--spin-delay',(k*35)+'ms');cup.classList.add('cup-spinning')});
+    glideTo(current);
+    buttons.forEach((cup,k)=>{cup.style.setProperty('--spin-delay',(k*28)+'ms');cup.classList.remove('cup-spinning')});
     if(window.bwSound)window.bwSound('shuffle');
     step++;
    };
    swap();
-   const interval=setInterval(swap,420);
+   const interval=setInterval(swap,520);
    const duration=Math.max(500,(settings.shuffle_secs||3)*1000);
-   setTimeout(()=>{clearInterval(interval);buttons.forEach(b=>b.classList.remove('cup-spinning'));place(order);},duration);
+   setTimeout(()=>{clearInterval(interval);buttons.forEach(b=>{b.classList.remove('cup-spinning');b.style.transitionDelay=''});glideTo(order)},duration);
   }
  }else if((phase==='picking'||phase==='reveal')&&order.length===3){place(order)}
  else if(phase==='betting'||phase==='preview'){place([1,2,3]);lastRenderedShuffle=null}
