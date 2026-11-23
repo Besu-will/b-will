@@ -142,6 +142,7 @@ document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll('[data-place-slot]').forEach(b=>b.onclick=async()=>{
  const slot=Number(b.dataset.placeSlot),stake=Number($('stake-'+slot).value);
+ activeSlot=slot;renderRound();
  try{
   if(!selectedCup)throw Error('Tap the cup you want to bet on first.');
   if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');
