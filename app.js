@@ -44,7 +44,7 @@ function mountNavigation(){
 mountNavigation();
 if(!cfg.supabaseUrl||!cfg.supabaseKey){$('auth-msg').textContent='Deployment configuration is missing. Contact the administrator.';return}
 const sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let user=null,me=null,round=null,settings=null,myBet=null,picks=[],offset=0,lastRound=null,lastRefresh=0,channel=null,signup=false,toastTimer=null,entering=false;
+let user=null,me=null,round=null,settings=null,myBet=null,picks=[],gameState=null,offset=0,lastRound=null,lastRefresh=0,channel=null,signup=false,toastTimer=null,entering=false,lastRenderedShuffle=null;
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3200)}
 function rpc(n,a){return sb.rpc(n,a||{}).then(r=>{if(r.error)throw r.error;return r.data})}
 function authMode(v){signup=v;$('auth-title').textContent=v?'Create account':'Sign in';$('auth-desc').textContent=v?'':'Access your account.';$('signup-fields').classList.toggle('hidden',!v);$('auth-submit').textContent=v?'Create account':'Sign in';$('auth-switch-text').textContent=v?'Already registered?':'New to B-Will?';$('auth-switch').textContent=v?'Sign in':'Create account';$('auth-msg').textContent=''}
@@ -53,11 +53,78 @@ $('auth-form').onsubmit=async e=>{e.preventDefault();$('auth-submit').disabled=t
 function isAdmin(){return !!(me&&me.is_admin&&user&&cfg.adminEmail&&String(user.email||'').toLowerCase()===String(cfg.adminEmail).toLowerCase())}
 function showApp(){ $('auth').classList.add('hidden');$('app').classList.remove('hidden')}
 async function enterApp(){if(!user||entering)return;entering=true;let timer;showApp();$('auth-msg').textContent='';try{await Promise.race([refreshAll(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('The app is taking too long to load. Please check your connection; you are signed in and can retry refresh.')),20000)})]);$('role-pill').textContent=isAdmin()?'ADMIN':'PLAYER';$('house-stat').classList.toggle('hidden',!isAdmin());$('admin-panel').classList.toggle('hidden',!isAdmin());if(window.bwShowAdminNav)window.bwShowAdminNav(isAdmin());subscribe();history().catch(()=>{});}catch(e){toast(e.message||String(e))}finally{if(timer)clearTimeout(timer);entering=false}}
-async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id)picks=[];lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).maybeSingle();myBet=b.data||null;if(myBet)picks=(myBet.cups||[]).slice();profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
+async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){picks=[];lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).maybeSingle();myBet=b.data||null;gameState=r[7]||{};picks=(gameState.guesses||myBet?.guesses||[]).map(Number);profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
 function profile(){$('available').textContent=money(me.available);$('locked').textContent=money(me.locked);$('wins').textContent=me.wins||0;$('user-pill').textContent=me.username||me.email||'Player'}
-function renderRound(){if(!round)return;$('round-id').textContent='#'+round.round_id;$('phase').textContent=round.phase==='betting'?'BETTING OPEN':'REVEAL';$('phase').classList.toggle('reveal',round.phase!=='betting');$('pool').textContent=money(round.total_pool);$('bettors').textContent=(round.bettors||0)+' participants';$('cup-hint').textContent=round.phase==='betting'?'Choose exactly two cups while betting is open.':'Round revealed · winning cup '+(round.revealed_cup||'—');$('selection-display').value=picks.length===2?picks.map(n=>'Cup '+n).join(' + '):'Choose 2 cups';if(myBet&&document.activeElement!==$('stake'))$('stake').value=Number(myBet.stake).toFixed(2);$('stake').placeholder=money(settings.min_stake||5);$('place-bet').textContent=myBet?'Update Stake & Picks':'Place Stake';$('place-bet').disabled=round.phase!=='betting';$('stake').disabled=round.phase!=='betting';document.querySelectorAll('.cup').forEach(b=>{const n=Number(b.dataset.cup),win=round.phase==='reveal'&&Number(round.revealed_cup)===n;b.classList.toggle('selected',picks.includes(n)&&round.phase==='betting');b.classList.toggle('winner',win);b.querySelector('.cup-check').textContent=win?'WIN':picks.includes(n)&&round.phase==='betting'?'✓':'';b.querySelector('small').textContent=win?'Coin revealed':picks.includes(n)&&round.phase==='betting'?'Selected':'Select';b.disabled=round.phase!=='betting'});$('bet-note').textContent=myBet?'Your stake: '+money(myBet.stake)+' · Picks: '+(myBet.cups||[]).join(', '):'Minimum stake '+money(settings.min_stake)+' · No maximum stake'}
-document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{if(!round||round.phase!=='betting')return;const n=Number(b.dataset.cup);picks=picks.includes(n)?picks.filter(x=>x!==n):picks.length<2?picks.concat(n):[picks[1],n];renderRound()});
-$('place-bet').onclick=async()=>{try{if(picks.length!==2)throw Error('Select exactly two different cups.');const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');await rpc('bwl_place_bet',{p_stake:stake,p_cups:picks});toast('Stake and selections saved.');await refreshAll()}catch(e){toast(e.message||String(e))}};
+function arrangeCups(){
+ const wrap=document.querySelector('.cups'),buttons=[...wrap.querySelectorAll('.cup')];
+ buttons.forEach(b=>{if(!b.dataset.identity)b.dataset.identity=b.dataset.cup;});
+ const order=(gameState&&gameState.shuffle_order||[]).map(Number);
+ if(['shuffle','picking','reveal'].includes(round.phase)&&order.length===3){
+  if(round.phase==='shuffle'){
+   const key=round.round_id+':'+order.join('');
+   if(lastRenderedShuffle!==key){
+    const width=buttons[0]?.offsetWidth||110,gap=12;
+    buttons.forEach(b=>{
+     const identity=Number(b.dataset.identity),destination=order.indexOf(identity)+1;
+     const dx=(destination-identity)*(width+gap);
+     const mid=(identity===1?1:identity===2?-2:1)*(width+gap);
+     b.style.setProperty('--dx',dx+'px');b.style.setProperty('--mid',mid+'px');b.style.setProperty('--mid-reverse',(-mid)+'px');
+     b.classList.remove('shuffle-run');void b.offsetWidth;b.classList.add('shuffle-run');
+    });
+    lastRenderedShuffle=key;
+   }
+  }else{
+   order.forEach((identity,index)=>{
+    const b=buttons.find(x=>Number(x.dataset.identity)===identity);
+    if(b){b.classList.remove('shuffle-run');b.style.transform='';b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);wrap.appendChild(b);}
+   });
+  }
+ }else if(round.phase==='betting'||round.phase==='preview'){
+  buttons.sort((a,b)=>Number(a.dataset.identity)-Number(b.dataset.identity)).forEach((b,index)=>{
+   b.classList.remove('shuffle-run');b.style.transform='';b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);wrap.appendChild(b);
+  });
+  if(round.phase==='preview')lastRenderedShuffle=null;
+ }
+}
+function renderRound(){
+ if(!round)return;
+ const phase=round.phase,labels={betting:'STAKE OPEN',preview:'REMEMBER',shuffle:'SHUFFLING',picking:'PICK A CUP',reveal:'RESULT'};
+ $('round-id').textContent='#'+round.round_id;$('phase').textContent=labels[phase]||phase.toUpperCase();$('phase').classList.toggle('reveal',phase==='reveal');
+ $('pool').textContent=money(round.total_pool);$('bettors').textContent=(round.bettors||0)+' participants';
+ picks=(gameState?.guesses||myBet?.guesses||[]).map(Number);
+ arrangeCups();
+ const order=(gameState?.shuffle_order||[]).map(Number),starting=Number(gameState?.starting_cup||0);
+ const target=order.length===3&&starting?order.indexOf(starting)+1:0;
+ const found=target>0&&picks.includes(target);
+ let hint='Place your stake before the item is revealed.';
+ if(phase==='preview')hint='Remember the cup containing the item. The shuffle starts next.';
+ if(phase==='shuffle')hint='Watch the cups carefully — the shuffle is in progress.';
+ if(phase==='picking')hint=!myBet?'This round is locked. You did not place a stake.':found?'You found the item! You win this round.':picks.length===0?'Choose the cup hiding the item. You have two guesses.':picks.length===1?'Not that cup? You have one guess left.':'Both guesses used. Waiting for the result.';
+ if(phase==='reveal')hint='The item was under Cup '+(round.revealed_cup||'—')+'. Payouts have been settled.';
+ $('cup-hint').textContent=hint;
+ $('selection-display').value=picks.length?(picks.length+'/2 guesses used'):'Two guesses after shuffle';
+ if(myBet&&document.activeElement!==$('stake'))$('stake').value=Number(myBet.stake).toFixed(2);
+ $('stake').placeholder=money(settings.min_stake||5);$('place-bet').textContent=myBet?'Update Stake':'Place Stake';
+ $('place-bet').disabled=phase!=='betting';$('stake').disabled=phase!=='betting';
+ document.querySelectorAll('.cup').forEach(b=>{
+  const position=Number(b.dataset.cup),identity=Number(b.dataset.identity||b.dataset.cup);
+  const win=phase==='reveal'&&Number(round.revealed_cup)===position;
+  const tried=picks.includes(position);
+  const token=b.querySelector('.item-token');
+  token.classList.toggle('hidden',!(phase==='preview'&&identity===starting));
+  b.classList.toggle('selected',phase==='picking'&&tried);b.classList.toggle('winner',win);
+  b.querySelector('.cup-check').textContent=win?'WIN':tried?'✓':'';
+  b.querySelector('small').textContent=win?'Item found':tried?'Tried':phase==='picking'?'Choose':'';
+  b.disabled=phase!=='picking'||!myBet||picks.length>=2||found||tried;
+ });
+ $('bet-note').textContent=myBet?'Your stake: '+money(myBet.stake)+' · Attempts used: '+picks.length+'/2':'Minimum stake '+money(settings.min_stake)+' · Place your stake before the reveal.';
+}
+document.querySelectorAll('.cup').forEach(b=>b.onclick=async()=>{
+ if(!round||round.phase!=='picking'||!myBet||picks.length>=2)return;
+ try{const result=await rpc('bwl_guess',{p_cup:Number(b.dataset.cup)});toast(result.correct?'Correct — you found the item!':result.attempts_left+' guess remaining.');await refreshAll();}
+ catch(e){toast(e.message||String(e));}
+});
+$('place-bet').onclick=async()=>{try{const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');await rpc('bwl_place_bet',{p_stake:stake});toast('Stake saved. Watch for the item reveal.');await refreshAll()}catch(e){toast(e.message||String(e))}};
 $('deposit-btn').onclick=async()=>{try{await rpc('bwl_request_deposit',{p_amount:Number($('deposit-amount').value)});$('deposit-amount').value='';toast('Deposit request submitted.');await refreshAll()}catch(e){toast(e.message||String(e))}};
 $('withdraw-btn').onclick=async()=>{try{await rpc('bwl_request_withdraw',{p_amount:Number($('withdraw-amount').value)});$('withdraw-amount').value='';toast('Withdrawal request submitted. Funds are locked.');await refreshAll()}catch(e){toast(e.message||String(e))}};
 function requests(rows){$('my-requests').innerHTML=rows.length?rows.map(r=>'<div class="request"><div><strong>'+esc(r.kind)+' · '+money(r.amount)+'</strong><small>'+date(r.created_at)+'</small></div><div class="inline"><span class="status '+esc(r.status)+'">'+esc(r.status)+'</span>'+(r.kind==='withdraw'&&r.status==='pending'?'<button class="btn small danger" data-cancel="'+r.id+'">Cancel</button>':'')+'</div></div>').join(''):'<div class="empty">No wallet requests yet.</div>';$('my-requests').querySelectorAll('[data-cancel]').forEach(b=>b.onclick=async()=>{try{await rpc('bwl_cancel_withdraw',{p_id:Number(b.dataset.cancel)});toast('Withdrawal cancelled. Funds returned.');await refreshAll()}catch(e){toast(e.message||String(e))}})}
@@ -73,7 +140,7 @@ async function admin(){try{const r=await Promise.all([rpc('bwl_admin_overview'),
 async function resolve(id,approve){try{await rpc('bwl_admin_resolve',{p_id:Number(id),p_approve:approve});toast(approve?'Request approved.':'Request rejected.');await refreshAll()}catch(e){toast(e.message||String(e))}}
 $('refresh-admin').onclick=admin;
 function subscribe(){if(channel)sb.removeChannel(channel);channel=sb.channel('bwill-live').on('postgres_changes',{event:'*',schema:'public',table:'bwl_round'},refreshAll).on('postgres_changes',{event:'*',schema:'public',table:'bwl_results'},refreshAll).on('postgres_changes',{event:'*',schema:'public',table:'bwl_settings'},refreshAll).on('postgres_changes',{event:'*',schema:'public',table:'bwl_profiles',filter:'id=eq.'+user.id},refreshAll).on('postgres_changes',{event:'*',schema:'public',table:'bwl_requests',filter:'user_id=eq.'+user.id},refreshAll).subscribe()}
-setInterval(()=>{if(!round)return;const left=Math.max(0,Math.ceil((new Date(round.phase_ends_at).getTime()-(Date.now()+offset))/1000)),total=round.phase==='betting'?Number(settings.betting_secs):Number(settings.reveal_secs);$('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');$('progress').style.width=Math.min(100,(total-left)/total*100)+'%';if(left===0&&Date.now()-lastRefresh>800)refreshAll().catch(()=>{})},250);
+setInterval(()=>{if(!round)return;const left=Math.max(0,Math.ceil((new Date(round.phase_ends_at).getTime()-(Date.now()+offset))/1000)),total=({betting:Number(settings.betting_secs),preview:3,shuffle:5,picking:15,reveal:Number(settings.reveal_secs)})[round.phase]||Number(settings.reveal_secs);$('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');$('progress').style.width=Math.min(100,(total-left)/total*100)+'%';if(left===0&&Date.now()-lastRefresh>800)refreshAll().catch(()=>{})},250);
 setInterval(()=>{if(user&&Date.now()-lastRefresh>4500)refreshAll().catch(()=>{})},1000);setInterval(()=>{if(user)history().catch(()=>{})},30000);
 $('signout').onclick=async()=>{if(channel)await sb.removeChannel(channel);await sb.auth.signOut();user=null;me=null;$('app').classList.add('hidden');$('auth').classList.remove('hidden');authMode(false)};
 sb.auth.onAuthStateChange((ev,s)=>{if(ev==='SIGNED_OUT'||!s){user=null;me=null;entering=false;$('app').classList.add('hidden');$('auth').classList.remove('hidden')}});
