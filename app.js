@@ -94,11 +94,11 @@ function arrangeCups(){
     after.forEach(b=>{
      const old=before.get(b),now=b.getBoundingClientRect();
      if(!old)return;
-     const dx=old.left-now.left,dy=old.top-now.top,tilt=(Number(b.dataset.identity)%2?1:-1)*(8+(Math.abs(dx)/40));
-     b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px) rotate('+tilt+'deg)';
+     const dx=old.left-now.left,dy=old.top-now.top,tilt=(Number(b.dataset.identity)%2?1:-1)*(12+(Math.abs(dx)/28));
+     b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px) rotate('+tilt+'deg) scale(.97)';
     });
     requestAnimationFrame(()=>{
-     after.forEach(b=>{b.style.transition='transform 250ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0) rotate(0deg)';});
+     after.forEach(b=>{b.style.transition='transform 300ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0) rotate(0deg) scale(1)';});
      setTimeout(()=>after.forEach(b=>{b.style.transition='';b.style.transform='';}),280);
     });
    };
