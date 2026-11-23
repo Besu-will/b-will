@@ -118,11 +118,11 @@ function renderRound(){
  picks=(gameState?.guesses||myBet?.guesses||[]).map(Number);
  if(phase!=='picking')selectionSlots=[];
  arrangeCups();
- const starting=Number(gameState?.starting_cup||0);
+ const starting=2;
  let hint='Enter your stake to join this round.';
- if(phase==='preview')hint='Look carefully. The item is under one of these cups.';
- if(phase==='shuffle')hint='Follow the cups as they shuffle.';
- if(phase==='picking')hint=!myBet?'You did not place a stake in this round.':picks.length?'Your selection is locked in. Wait for the result.':'Choose one cup or fill both slots, then confirm.';
+ if(phase==='preview')hint='FIRST REVEAL · The mini ball is beneath the middle cup.';
+ if(phase==='shuffle')hint='SHUFFLING · Watch the cups rotate and exchange positions on the table.';
+ if(phase==='picking')hint=!myBet?'You did not place a stake in this round.':picks.length?'Your selection is locked in. Wait for the result.':'Choose one or two cups using the two betting slots.';
  if(phase==='reveal')hint='The item was under Cup '+(round.revealed_cup||'—')+'. Payouts have been settled.';
  $('cup-hint').textContent=hint;
  $('selection-display').textContent=picks.length?(picks.length+' / 2'): (selectionSlots.length+' / 2');
@@ -140,7 +140,7 @@ function renderRound(){
   const win=phase==='reveal'&&Number(round.revealed_cup)===position;
   const tried=picks.includes(position),chosen=selectionSlots.includes(position);
   const token=b.querySelector('.item-token');
-  token.classList.toggle('hidden',!(phase==='preview'&&identity===starting));
+  token.classList.toggle('hidden',!(phase==='preview'&&position===2));
   b.classList.toggle('selected',phase==='picking'&&(tried||chosen));b.classList.toggle('winner',win);
   b.querySelector('.cup-check').textContent=win?'✦':tried?'✓':chosen?'✓':'';
   b.querySelector('small').textContent=win?'Item found':tried?'Submitted':chosen?'Slot selected':phase==='picking'?'Select':'';
