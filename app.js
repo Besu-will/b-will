@@ -97,12 +97,12 @@ function arrangeCups(){
      b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px)';
     });
     requestAnimationFrame(()=>{
-     after.forEach(b=>{b.style.transition='transform 360ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0)';});
-     setTimeout(()=>after.forEach(b=>{b.style.transition='';b.style.transform='';}),390);
+     after.forEach(b=>{b.style.transition='transform 250ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0)';});
+     setTimeout(()=>after.forEach(b=>{b.style.transition='';b.style.transform='';}),280);
     });
    };
-   steps.forEach((step,index)=>setTimeout(()=>animateOrder(step),index*440));
-   setTimeout(()=>place(order),steps.length*440+420);
+   steps.forEach((step,index)=>setTimeout(()=>animateOrder(step),index*300));
+   setTimeout(()=>place(order),steps.length*300+300);
   }
  }else if(['picking','reveal'].includes(phase)&&order.length===3){
   place(order);
