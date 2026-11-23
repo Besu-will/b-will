@@ -579,3 +579,39 @@ body{background:#030509;color:#f5f6fa}
 @media(max-width:560px){.wrap{padding:0 0 100px}.game-stage{height:clamp(510px,112vw,780px)}.cups{top:43%;left:7%;right:7%;gap:2%}.cup{height:clamp(125px,27vw,165px)}.bet-card{border-radius:24px;padding:13px 12px 10px}.stake-control{height:54px}.stake-control input{font-size:20px}.bet-actions{grid-template-columns:minmax(0,1fr) 34%;gap:8px}.stake-quick{gap:4px}.stake-quick button{font-size:12px;padding:9px 0}.bet-button{height:48px;font-size:17px}.game-header{height:84px;padding:12px 14px}.screen-balance{padding:8px 10px;font-size:16px;gap:8px}}
 @media(prefers-reduced-motion:reduce){.cup,.bet-card,.bet-button{animation:none!important;transition:none!important}}
 .reveal-ball{position:absolute;z-index:8;top:calc(43% + 112px);left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#fff9a9,#f4d84e 42%,#9a6810);box-shadow:0 0 24px #ffe56c,0 5px 8px #0009;animation:ball-reveal .65s ease-out both}@keyframes ball-reveal{0%{opacity:0;transform:translate(-50%,-35px) scale(.3)}65%{opacity:1;transform:translate(-50%,0) scale(1.2)}100%{transform:translate(-50%,0) scale(1)}}
+/* Minimal premium game finish */
+body{background:#05070a!important;color:#f2f5f7!important;font-family:Manrope,system-ui,sans-serif!important}
+#app:not(.admin-mode){max-width:620px!important;background:#06090e!important;box-shadow:0 0 70px #000}
+#app:not(.admin-mode) .game-header{height:74px!important;padding:10px 18px!important;background:#080d15!important;border-bottom:1px solid #1b2733!important}
+#app:not(.admin-mode) .game-header h1{font-size:32px!important;letter-spacing:-1.8px!important;color:#f6f7f8!important}
+#app:not(.admin-mode) .game-header h1 span{color:#f2c94c!important}
+#app:not(.admin-mode) .screen-balance{padding:7px 10px!important;gap:8px!important;font-size:15px!important;border-radius:12px!important}
+#app:not(.admin-mode) .game-stage{height:clamp(390px,92vw,570px)!important;min-height:390px!important;background:linear-gradient(180deg,#10191d 0%,#182326 44%,#211a15 45%,#0b0c0e 100%)!important}
+#app:not(.admin-mode) .room-wall{inset:0 0 49%!important;background:linear-gradient(120deg,#101b1d,#263538 52%,#111a1c)!important}
+#app:not(.admin-mode) .room-wall:before{opacity:.28!important}
+#app:not(.admin-mode) .wood-floor{inset:45% -12% -4%!important;background:repeating-linear-gradient(90deg,transparent 0 90px,#130e0a 92px,#090706 95px,transparent 98px),repeating-linear-gradient(0deg,#48301f 0 64px,#21150f 66px,#68472e 70px)!important}
+#app:not(.admin-mode) .cups{top:42%!important;left:6%!important;right:6%!important;gap:1%!important;perspective:900px!important}
+#app:not(.admin-mode) .cup{height:clamp(120px,27vw,165px)!important;min-height:120px!important;transform-style:preserve-3d!important}
+#app:not(.admin-mode) .cup-art{left:16%!important;right:16%!important;background:linear-gradient(90deg,#89501e,#d79b53 24%,#f5ce8c 49%,#c48643 76%,#70401b)!important;box-shadow:inset 9px 0 12px #fff5,inset -10px 0 13px #43230f99,0 14px 16px #000b!important}
+#app:not(.admin-mode) .cup-art:before{height:14%!important;background:linear-gradient(180deg,#ffe2ae,#b87939)!important}
+#app:not(.admin-mode) .cup.preview-lift{animation:peek-cup .8s cubic-bezier(.2,.75,.25,1) both!important}
+#app:not(.admin-mode) .cup.cup-spinning{animation:cup-flip .38s cubic-bezier(.25,.7,.25,1) both!important}
+#app:not(.admin-mode) .reveal-ball{top:calc(42% + 100px)!important;width:20px!important;height:20px!important}
+#app:not(.admin-mode) .cup-hint{bottom:5%!important;font-size:11px!important;color:#c4cbd0!important}
+#app:not(.admin-mode) .game-status{top:12px!important;left:14px!important;right:14px!important}
+#app:not(.admin-mode) .panel-bets{gap:12px!important;padding:12px 10px 26px!important;background:linear-gradient(180deg,#080b10,#030405)!important}
+#app:not(.admin-mode) .bet-card{padding:12px!important;border-radius:18px!important;background:linear-gradient(145deg,#151e2b,#0b111a)!important;border:1px solid #283543!important;box-shadow:0 8px 18px #0008!important}
+#app:not(.admin-mode) .bet-card.active-panel{border-color:#39d98a!important;box-shadow:0 0 0 1px #39d98a44,0 0 20px #26cf7a22!important}
+#app:not(.admin-mode) .stake-control{height:48px!important;border-radius:12px!important}
+#app:not(.admin-mode) .stake-control button{width:36px!important;height:36px!important;border-radius:9px!important;font-size:22px!important}
+#app:not(.admin-mode) .stake-control input{font-size:19px!important}
+#app:not(.admin-mode) .bet-actions{grid-template-columns:minmax(0,1fr) 28%!important;gap:9px!important;margin-top:8px!important}
+#app:not(.admin-mode) .stake-quick button{padding:8px 1px!important;border-radius:9px!important;font-size:11px!important}
+#app:not(.admin-mode) .bet-button{height:43px!important;border-radius:11px!important;font-size:15px!important;box-shadow:0 3px 9px #08a94c44!important}
+#app:not(.admin-mode) .bet-status{margin-top:6px!important;font-size:9px!important}
+#app:not(.admin-mode) .game-panel>.note{background:#030405!important;color:#65717e!important}
+#app:not(.admin-mode) .bottom-nav{background:#0b111bf2!important;border-color:#263443!important;box-shadow:0 8px 26px #000c!important}
+#app:not(.admin-mode) .nav-icon{font-size:17px!important}
+#app:not(.admin-mode) .cup.selected{filter:drop-shadow(0 0 15px #49e99c)!important}
+#app:not(.admin-mode) .bet-card.placed-panel{animation:placed-flash .65s ease-out!important}
+@media(max-width:560px){#app:not(.admin-mode) .game-stage{height:clamp(390px,104vw,510px)!important}#app:not(.admin-mode) .cups{top:42%!important}#app:not(.admin-mode) .cup{height:clamp(118px,29vw,148px)!important}#app:not(.admin-mode) .bet-actions{grid-template-columns:minmax(0,1fr) 27%!important}}
