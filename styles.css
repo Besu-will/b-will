@@ -22,3 +22,13 @@
 #app.admin-mode .page-stack{min-height:55vh}
 #app.admin-mode .bottom-nav{width:min(250px,calc(100% - 24px));grid-template-columns:repeat(2,minmax(0,1fr))}
 #app.admin-mode .tab-page{max-width:980px}
+
+/* Admin home, requests and settings navigation */
+.admin-dashboard-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.admin-metric{min-width:0;padding:16px;border:1px solid var(--line);border-radius:13px;background:#0c1725}
+.admin-metric span{display:block;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.admin-metric strong{display:block;font:600 22px "DM Mono",monospace;margin-top:10px;overflow-wrap:anywhere}
+.admin-metric small{display:block;color:var(--muted);font-size:10px;margin-top:7px}
+#app.admin-mode .bottom-nav{width:min(360px,calc(100% - 24px));grid-template-columns:repeat(3,minmax(0,1fr))}
+#app.admin-mode .tab-page{max-width:1050px}
+@media(max-width:560px){.admin-dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-metric{padding:13px}.admin-metric strong{font-size:18px}}
