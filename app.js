@@ -44,7 +44,7 @@ function mountNavigation(){
 mountNavigation();
 if(!cfg.supabaseUrl||!cfg.supabaseKey){$('auth-msg').textContent='Deployment configuration is missing. Contact the administrator.';return}
 const sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let user=null,me=null,round=null,settings=null,myBet=null,picks=[],selectionSlots=[],gameState=null,offset=0,lastRound=null,lastRefresh=0,channel=null,signup=false,toastTimer=null,entering=false,lastRenderedShuffle=null;
+let user=null,me=null,round=null,settings=null,myBets=[],selectedCup=null,activeSlot=1,gameState=null,offset=0,lastRound=null,lastRefresh=0,channel=null,signup=false,toastTimer=null,entering=false,lastRenderedShuffle=null;
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3200)}
 function rpc(n,a){return sb.rpc(n,a||{}).then(r=>{if(r.error)throw r.error;return r.data})}
 function authMode(v){signup=v;$('auth-title').textContent=v?'Create account':'Sign in';$('auth-desc').textContent=v?'':'Access your account.';$('signup-fields').classList.toggle('hidden',!v);$('auth-submit').textContent=v?'Create account':'Sign in';$('auth-switch-text').textContent=v?'Already registered?':'New to B-Will?';$('auth-switch').textContent=v?'Sign in':'Create account';$('auth-msg').textContent=''}
@@ -53,7 +53,7 @@ $('auth-form').onsubmit=async e=>{e.preventDefault();$('auth-submit').disabled=t
 function isAdmin(){return !!(me&&me.is_admin&&user&&cfg.adminEmail&&String(user.email||'').toLowerCase()===String(cfg.adminEmail).toLowerCase())}
 function showApp(){ $('auth').classList.add('hidden');$('app').classList.remove('hidden')}
 async function enterApp(){if(!user||entering)return;entering=true;let timer;showApp();$('auth-msg').textContent='';try{await Promise.race([refreshAll(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('The app is taking too long to load. Please check your connection; you are signed in and can retry refresh.')),20000)})]);$('role-pill').textContent=isAdmin()?'ADMIN':'PLAYER';$('house-stat').classList.toggle('hidden',!isAdmin());$('admin-panel').classList.toggle('hidden',!isAdmin());if(window.bwShowAdminNav)window.bwShowAdminNav(isAdmin());subscribe();history().catch(()=>{});}catch(e){toast(e.message||String(e))}finally{if(timer)clearTimeout(timer);entering=false}}
-async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){picks=[];lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).maybeSingle();myBet=b.data||null;gameState=r[7]||{};picks=(gameState.guesses||myBet?.guesses||[]).map(Number);profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
+async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){selectedCup=null;lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).order('bet_slot');myBets=b.data||[];gameState=r[7]||{};selectedCup=null;activeSlot=myBets.some(x=>x.bet_slot===1&&!x.guesses?.length)?2:1;profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
 function profile(){$('available').textContent=money(me.available);if($('screen-balance'))$('screen-balance').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
 function arrangeCups(){
@@ -98,74 +98,65 @@ function arrangeCups(){
 }
 function renderRound(){
  if(!round)return;
- const phase=round.phase,labels={betting:'STAKE OPEN',preview:'FIRST REVEAL',shuffle:'SHUFFLING',picking:'CHOOSE 1 OR 2',reveal:'FINAL REVEAL'};
+ const phase=round.phase,labels={betting:'GET READY',preview:'FIRST REVEAL',shuffle:'SHUFFLING',picking:'PLACE YOUR BET',reveal:'FINAL REVEAL'};
  $('phase').textContent=labels[phase]||phase.toUpperCase();$('phase').classList.toggle('reveal',phase==='reveal');
- picks=(gameState?.guesses||myBet?.guesses||[]).map(Number);
- if(phase!=='picking')selectionSlots=[];
  arrangeCups();
- const starting=2;
- let hint='Enter your stake to join this round.';
- if(phase==='preview')hint='FIRST REVEAL · The mini ball is beneath the middle cup.';
- if(phase==='shuffle')hint='SHUFFLING · Watch the cups rotate and exchange positions on the table.';
- if(phase==='picking')hint=!myBet?'You did not place a stake in this round.':picks.length?'Your selection is locked in. Wait for the result.':'Choose one or two cups using the two betting slots.';
- if(phase==='reveal')hint='The item was under Cup '+(round.revealed_cup||'—')+'. Payouts have been settled.';
+ let hint='Get ready for the next round.';
+ if(phase==='preview')hint='The mini ball is revealed beneath the middle cup.';
+ if(phase==='shuffle')hint='Watch the cups spin and swap places rapidly.';
+ if(phase==='picking')hint='Tap a cup, choose a panel and press BET. Each panel is an independent bet.';
+ if(phase==='reveal')hint='The ball was under Cup '+(round.revealed_cup||'—')+'.';
  $('cup-hint').textContent=hint;
- $('selection-display').textContent=picks.length?(picks.length+' / 2'): (selectionSlots.length+' / 2');
- if(myBet&&document.activeElement!==$('stake'))$('stake').value=Number(myBet.stake).toFixed(2);
- $('stake').placeholder=money(settings.min_stake||5);$('minimum-stake').textContent=money(settings.min_stake||5);$('place-bet').textContent=myBet?'Stake placed':'Place Stake';
- $('place-bet').disabled=phase!=='betting';$('stake').disabled=phase!=='betting';
- const stakeCard=document.querySelector('.bet-card:not(.selection-card)'),pickCard=document.querySelector('.selection-card');
- stakeCard.classList.toggle('is-active',!!myBet);stakeCard.classList.toggle('is-idle',!myBet);
- pickCard.classList.toggle('is-active',phase==='picking'&&!!myBet);pickCard.classList.toggle('is-idle',phase!=='picking'||!myBet);
- $('place-bet').textContent=myBet?'STAKE PLACED':'BET';
- $('submit-guesses').textContent=phase==='picking'&&myBet?(selectionSlots.length?'CONFIRM PICKS':'CHOOSE CUPS'):'PICKS LOCKED';
-
+ document.querySelectorAll('.bet-card').forEach(card=>{
+  const slot=Number(card.dataset.slot),bet=myBets.find(x=>Number(x.bet_slot)===slot),placed=!!(bet&&bet.guesses&&bet.guesses.length);
+  card.classList.toggle('active-panel',phase==='picking'&&selectedCup!==null&&activeSlot===slot&&!placed);
+  card.classList.toggle('placed-panel',placed&&phase==='reveal');
+  const input=$('stake-'+slot);if(bet&&document.activeElement!==input)input.value=Number(bet.stake).toFixed(2);
+  input.disabled=phase!=='picking'||placed;
+  const btn=$('place-bet-'+slot);btn.disabled=phase!=='picking'||!selectedCup||placed;
+  btn.textContent=placed?'PLACED':'BET';
+  $('bet-status-'+slot).textContent=placed?'✓ BET PLACED · CUP '+bet.guesses[0]:selectedCup&&activeSlot===slot?'CUP '+selectedCup+' SELECTED':'Tap a cup to activate this panel';
+ });
  document.querySelectorAll('.cup').forEach(b=>{
-  const position=Number(b.dataset.cup),identity=Number(b.dataset.identity||b.dataset.cup);
-  const win=phase==='reveal'&&Number(round.revealed_cup)===position;
-  const tried=picks.includes(position),chosen=selectionSlots.includes(position);
+  const position=Number(b.dataset.cup),win=phase==='reveal'&&Number(round.revealed_cup)===position;
   const token=b.querySelector('.item-token');
   token.classList.toggle('hidden',!(phase==='preview'&&position===2));
-  b.classList.toggle('selected',phase==='picking'&&(tried||chosen));b.classList.toggle('winner',win);
-  b.querySelector('.cup-check').textContent=win?'✦':tried?'✓':chosen?'✓':'';
-  b.querySelector('small').textContent=win?'Item found':tried?'Submitted':chosen?'Slot selected':phase==='picking'?'Select':'';
-  b.disabled=phase!=='picking'||!myBet||picks.length>0||(!chosen&&selectionSlots.length>=2);
+  b.classList.toggle('selected',phase==='picking'&&selectedCup===position);
+  b.classList.toggle('winner',win);
+  b.classList.toggle('preview-lift',phase==='preview'&&position===2);
+  b.querySelector('.cup-check').textContent=win?'✦':'';
+  b.querySelector('small').textContent=win?'BALL FOUND':selectedCup===position?'SELECTED':'';
+  b.disabled=phase!=='picking'||myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===position);
  });
- [1,2].forEach(slotIndex=>{
-  const slot=$('slot-'+slotIndex),cup=selectionSlots[slotIndex-1];
-  slot.querySelector('.slot-value').textContent=cup?'CUP '+cup:'EMPTY';
-  slot.classList.toggle('filled',!!cup);
-  slot.disabled=phase!=='picking'||picks.length>0||!cup;
- });
- $('submit-guesses').disabled=phase!=='picking'||!myBet||picks.length>0||selectionSlots.length===0;
- $('submit-guesses').textContent=phase!=='picking'||!myBet?'PICKS LOCKED':selectionSlots.length===1?'CONFIRM 1 PICK':selectionSlots.length===2?'CONFIRM 2 PICKS':'CHOOSE CUPS';
- $('bet-note').textContent=myBet?'Your stake: '+money(myBet.stake):'Minimum stake '+money(settings.min_stake)+' · One stake per round.';
+ $('bet-note').textContent='Minimum stake '+money(settings.min_stake||5)+' · Each panel places one independent bet.';
 }
 document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
- if(!round||round.phase!=='picking'||!myBet||picks.length>0)return;
- const cup=Number(b.dataset.cup),at=selectionSlots.indexOf(cup);
- if(at>=0)selectionSlots.splice(at,1);
- else if(selectionSlots.length<2)selectionSlots.push(cup);
+ if(round?.phase!=='picking')return;
+ const cup=Number(b.dataset.cup);
+ if(myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===cup)){toast('That cup is already used by one of your bets.');return}
+ selectedCup=cup;
+ const firstOpen=[1,2].find(slot=>!myBets.some(x=>Number(x.bet_slot)===slot&&x.guesses?.length));
+ if(firstOpen)activeSlot=firstOpen;
  renderRound();
 });
-[1,2].forEach(n=>{
- $('slot-'+n).onclick=()=>{
-  if(round?.phase!=='picking'||picks.length>0)return;
-  selectionSlots.splice(n-1,1);renderRound();
- };
-});
-$('submit-guesses').onclick=async()=>{
+document.querySelectorAll('[data-place-slot]').forEach(b=>b.onclick=async()=>{
+ const slot=Number(b.dataset.placeSlot),stake=Number($('stake-'+slot).value);
  try{
-  if(!selectionSlots.length||selectionSlots.length>2)throw Error('Choose one cup or two cups.');
-  const chosen=selectionSlots.slice();
-  await rpc('bwl_submit_guesses',{p_cups:chosen});
-  selectionSlots=[];toast('Selection confirmed. Good luck!');await refreshAll();
- }catch(e){toast(e.message||String(e))}
-};
-document.querySelectorAll('[data-stake]').forEach(b=>b.onclick=()=>{if(!$('stake').disabled)$('stake').value=b.dataset.stake});
-$('place-bet').onclick=async()=>{try{const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');await rpc('bwl_place_bet',{p_stake:stake});toast('Stake saved. Watch for the item reveal.');await refreshAll()}catch(e){toast(e.message||String(e))}};
-$('deposit-btn').onclick=async()=>{try{await rpc('bwl_request_deposit',{p_amount:Number($('deposit-amount').value)});$('deposit-amount').value='';toast('Deposit request submitted.');await refreshAll()}catch(e){toast(e.message||String(e))}};
-$('withdraw-btn').onclick=async()=>{try{await rpc('bwl_request_withdraw',{p_amount:Number($('withdraw-amount').value)});$('withdraw-amount').value='';toast('Withdrawal request submitted. Funds are locked.');await refreshAll()}catch(e){toast(e.message||String(e))}};
+  if(!selectedCup)throw Error('Tap the cup you want to bet on first.');
+  if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');
+  b.disabled=true;b.classList.add('loading');
+  await rpc('bwl_place_bet',{p_stake:stake,p_slot:slot,p_cup:selectedCup});
+  selectedCup=null;toast('BET PLACED · Good luck!');await refreshAll();
+  const card=document.querySelector('.bet-card[data-slot="'+slot+'"]');card.classList.add('placed-panel');setTimeout(()=>card.classList.remove('placed-panel'),900);
+ }catch(e){toast(e.message||String(e))}finally{b.classList.remove('loading');}
+});
+document.querySelectorAll('[data-stake]').forEach(b=>b.onclick=()=>{
+ const slot=Number(b.dataset.slot),input=$('stake-'+slot);if(!input.disabled){input.value=b.dataset.stake;input.dispatchEvent(new Event('change'))}
+});
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
+ const slot=Number(b.dataset.slot),input=$('stake-'+slot);if(input.disabled)return;
+ input.value=Math.max(Number(settings.min_stake||5),Number(input.value||0)+Number(b.dataset.step)*5).toFixed(2);
+});
 function requests(rows){$('my-requests').innerHTML=rows.length?rows.map(r=>'<div class="request"><div><strong>'+esc(r.kind)+' · '+money(r.amount)+'</strong><small>'+date(r.created_at)+'</small></div><div class="inline"><span class="status '+esc(r.status)+'">'+esc(r.status)+'</span>'+(r.kind==='withdraw'&&r.status==='pending'?'<button class="btn small danger" data-cancel="'+r.id+'">Cancel</button>':'')+'</div></div>').join(''):'<div class="empty">No wallet requests yet.</div>';$('my-requests').querySelectorAll('[data-cancel]').forEach(b=>b.onclick=async()=>{try{await rpc('bwl_cancel_withdraw',{p_id:Number(b.dataset.cancel)});toast('Withdrawal cancelled. Funds returned.');await refreshAll()}catch(e){toast(e.message||String(e))}})}
 function leaderboard(rows){$('lb-status').textContent=settings.leaderboard_on?'Counting ON':'Counting OFF';$('leaderboard').innerHTML=rows.length?'<table class="table"><thead><tr><th>Rank</th><th>Player</th><th class="right">Wins</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="rank">'+r.rank+'</td><td>'+esc(r.username)+'</td><td class="right mono">'+r.wins+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">No wins recorded yet.</div>'}
 function results(rows){$('results').innerHTML=rows.length?'<table class="table"><thead><tr><th>Round</th><th>Winning cup</th><th class="right">Pool</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="mono">#'+r.round_id+'</td><td class="gold">Cup '+r.winning_cup+'</td><td class="right mono">'+money(r.total_pool)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">Round results will appear here.</div>'}
