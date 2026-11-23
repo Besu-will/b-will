@@ -61,7 +61,7 @@ function arrangeCups(){
  const wrap=document.querySelector('.cups'),buttons=[...wrap.querySelectorAll('.cup')];
  buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=String(i+1)});
  const order=(gameState&&gameState.shuffle_order||[]).map(Number);
- const place=ids=>ids.forEach((identity,index)=>{const b=buttons.find(x=>Number(x.dataset.identity)===identity);if(b){b.dataset.cup=String(index+1);b.style.order=String(index);}});
+ const place=ids=>ids.forEach((identity,index)=>{const b=buttons.find(x=>Number(x.dataset.identity)===identity);if(b){b.dataset.cup=String(index+1);b.style.gridColumnStart=String(index+1);}});
  const phase=round?.phase;
  if(phase==='shuffle'&&order.length===3){
   const key=round.round_id+':'+order.join('');
