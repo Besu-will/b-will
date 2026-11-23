@@ -16,3 +16,9 @@
 /* Admin and platform navigation layout */
 .bottom-nav{width:min(440px,calc(100% - 24px));grid-template-columns:repeat(4,minmax(0,1fr))}
 .admin .admin-grid{grid-template-columns:minmax(0,1fr)}
+
+/* Fully separate administrator workspace */
+#app.admin-mode .stats{display:none!important}
+#app.admin-mode .page-stack{min-height:55vh}
+#app.admin-mode .bottom-nav{width:min(250px,calc(100% - 24px));grid-template-columns:repeat(2,minmax(0,1fr))}
+#app.admin-mode .tab-page{max-width:980px}
