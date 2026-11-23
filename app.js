@@ -45,6 +45,7 @@ mountNavigation();
 if(!cfg.supabaseUrl||!cfg.supabaseKey){$('auth-msg').textContent='Deployment configuration is missing. Contact the administrator.';return}
 const sb=supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let user=null,me=null,round=null,settings=null,myBets=[],selectedCup=null,activeSlot=1,gameState=null,offset=0,lastRound=null,lastRefresh=0,channel=null,signup=false,toastTimer=null,entering=false,lastRenderedShuffle=null;
+let bwAudio=null;window.bwSound=(kind)=>{try{bwAudio=bwAudio||new (window.AudioContext||window.webkitAudioContext)();if(bwAudio.state==='suspended')bwAudio.resume();const now=bwAudio.currentTime,osc=bwAudio.createOscillator(),gain=bwAudio.createGain();osc.connect(gain);gain.connect(bwAudio.destination);const f=kind==='bet'?620:kind==='select'?440:kind==='win'?880:260;osc.type='sine';osc.frequency.setValueAtTime(f,now);osc.frequency.exponentialRampToValueAtTime(f*1.45,now+.09);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.055,now+.012);gain.gain.exponentialRampToValueAtTime(.0001,now+.16);osc.start(now);osc.stop(now+.17)}catch(e){}};
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3200)}
 function rpc(n,a){return sb.rpc(n,a||{}).then(r=>{if(r.error)throw r.error;return r.data})}
 function authMode(v){signup=v;$('auth-title').textContent=v?'Create account':'Sign in';$('auth-desc').textContent=v?'':'Access your account.';$('signup-fields').classList.toggle('hidden',!v);$('auth-submit').textContent=v?'Create account':'Sign in';$('auth-switch-text').textContent=v?'Already registered?':'New to B-Will?';$('auth-switch').textContent=v?'Sign in':'Create account';$('auth-msg').textContent=''}
@@ -57,44 +58,31 @@ async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_
 function profile(){$('available').textContent=money(me.available);if($('screen-balance'))$('screen-balance').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
 function arrangeCups(){
- const wrap=document.querySelector('.cups');
- const buttons=[...wrap.querySelectorAll('.cup')];
- buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=b.dataset.cup||String(i+1);});
+ const wrap=document.querySelector('.cups'),buttons=[...wrap.querySelectorAll('.cup')];
+ buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=String(i+1)});
  const order=(gameState&&gameState.shuffle_order||[]).map(Number);
- const place=identityOrder=>{
-  identityOrder.forEach((identity,index)=>{
-   const b=buttons.find(x=>Number(x.dataset.identity)===identity);
-   if(b){b.dataset.cup=String(index+1);b.style.order=String(index);b.querySelector('.cup-label').textContent=String(index+1);}
-  });
- };
- const phase=round&&round.phase;
+ const place=ids=>ids.forEach((identity,index)=>{const b=buttons.find(x=>Number(x.dataset.identity)===identity);if(b){b.dataset.cup=String(index+1);b.style.order=String(index);}});
+ const phase=round?.phase;
  if(phase==='shuffle'&&order.length===3){
   const key=round.round_id+':'+order.join('');
   if(lastRenderedShuffle!==key){
    lastRenderedShuffle=key;
-   const spin=()=>{
-    buttons.forEach((b,index)=>{
-     b.classList.remove('cup-spinning');
-     void b.offsetWidth;
-     b.style.setProperty('--spin-delay',(index*90)+'ms');
-     b.classList.add('cup-spinning');
-    });
+   let current=[1,2,3],step=0;
+   const swap=()=>{
+    const a=step%3,b=(step+1+Math.floor(step/3))%3;
+    [current[a],current[b]]=[current[b],current[a]];
+    place(current);
+    buttons.forEach((cup,k)=>{cup.classList.remove('cup-spinning');void cup.offsetWidth;cup.style.setProperty('--spin-delay',(k*35)+'ms');cup.classList.add('cup-spinning')});
+    if(window.bwSound)window.bwSound('shuffle');
+    step++;
    };
-   spin();
+   swap();
+   const interval=setInterval(swap,420);
    const duration=Math.max(500,(settings.shuffle_secs||3)*1000);
-   const interval=setInterval(spin,900);
-   setTimeout(()=>{
-    clearInterval(interval);
-    buttons.forEach(b=>b.classList.remove('cup-spinning'));
-    place(order);
-   },duration);
+   setTimeout(()=>{clearInterval(interval);buttons.forEach(b=>b.classList.remove('cup-spinning'));place(order);},duration);
   }
- }else if((phase==='picking'||phase==='reveal')&&order.length===3){
-  place(order);
- }else if(phase==='betting'||phase==='preview'){
-  place([1,2,3]);
-  lastRenderedShuffle=null;
- }
+ }else if((phase==='picking'||phase==='reveal')&&order.length===3){place(order)}
+ else if(phase==='betting'||phase==='preview'){place([1,2,3]);lastRenderedShuffle=null}
 }
 function renderRound(){
  if(!round)return;
@@ -135,7 +123,7 @@ document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
  if(round?.phase!=='picking')return;
  const cup=Number(b.dataset.cup);
  if(myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===cup)){toast('That cup is already used by one of your bets.');return}
- selectedCup=cup;
+ selectedCup=cup;if(window.bwSound)window.bwSound('select');
  const firstOpen=[1,2].find(slot=>!myBets.some(x=>Number(x.bet_slot)===slot&&x.guesses?.length));
  if(firstOpen)activeSlot=firstOpen;
  renderRound();
@@ -148,7 +136,7 @@ document.querySelectorAll('[data-place-slot]').forEach(b=>b.onclick=async()=>{
   if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');
   b.disabled=true;b.classList.add('loading');
   await rpc('bwl_place_bet',{p_stake:stake,p_slot:slot,p_cup:selectedCup});
-  selectedCup=null;toast('BET PLACED · Good luck!');await refreshAll();
+  selectedCup=null;if(window.bwSound)window.bwSound('bet');toast('BET PLACED · Good luck!');await refreshAll();
   const card=document.querySelector('.bet-card[data-slot="'+slot+'"]');card.classList.add('placed-panel');setTimeout(()=>card.classList.remove('placed-panel'),900);
  }catch(e){toast(e.message||String(e))}finally{b.classList.remove('loading');}
 });
