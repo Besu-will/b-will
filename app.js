@@ -64,7 +64,7 @@ function arrangeCups(){
  const place=(identityOrder)=>{
   identityOrder.forEach((identity,index)=>{
    const b=buttons.find(x=>Number(x.dataset.identity)===identity);
-   if(b){b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);wrap.appendChild(b);}
+   if(b){b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);}
   });
  };
  const phase=round&&round.phase;
@@ -72,38 +72,19 @@ function arrangeCups(){
   const key=round.round_id+':'+order.join('');
   if(lastRenderedShuffle!==key){
    lastRenderedShuffle=key;
-   const current=buttons.slice().sort((x,y)=>Number(x.dataset.cup)-Number(y.dataset.cup)).map(b=>Number(b.dataset.identity));
-   const steps=[];
-   let working=current.slice();
-   // A chain of ordinary position swaps: cups stay upright-side-down and slide only.
-   for(let i=0;i<5;i++){
-    let x=i%3,y=(i+1+(i%2))%3;if(x===y)y=(y+1)%3;
-    [working[x],working[y]]=[working[y],working[x]];
-    steps.push(working.slice());
-   }
-   if(working.join('')!==order.join('')){
-    for(let i=0;i<3;i++){
-     const target=order[i],at=working.indexOf(target);
-     if(at!==i){[working[i],working[at]]=[working[at],working[i]];steps.push(working.slice());}
-    }
-   }
-   const animateOrder=next=>{
-    const before=new Map([...wrap.querySelectorAll('.cup')].map(b=>[b, b.getBoundingClientRect()]));
-    next.forEach(id=>{const b=buttons.find(x=>Number(x.dataset.identity)===id);if(b)wrap.appendChild(b);});
-    const after=[...wrap.querySelectorAll('.cup')];
-    after.forEach(b=>{
-     const old=before.get(b),now=b.getBoundingClientRect();
-     if(!old)return;
-     const dx=old.left-now.left,dy=old.top-now.top,tilt=(Number(b.dataset.identity)%2?1:-1)*(14+(Math.abs(dx)/28));
-     b.style.transition='none';b.style.transform='translate('+dx+'px,'+dy+'px) rotate('+tilt+'deg) rotateY(0deg) scale(.97)';
-    });
-    requestAnimationFrame(()=>{
-     after.forEach(b=>{b.style.transition='transform 300ms cubic-bezier(.2,.7,.2,1)';b.style.transform='translate(0,0) rotate(0deg) rotateY(360deg) scale(1)';});
-     setTimeout(()=>after.forEach(b=>{b.style.transition='';b.style.transform='';}),280);
+   const spin=()=>{
+    buttons.forEach((b,index)=>{
+     b.classList.remove('cup-spinning');
+     void b.offsetWidth;
+     b.style.setProperty('--spin-delay',(index*90)+'ms');
+     b.classList.add('cup-spinning');
     });
    };
-   steps.forEach((step,index)=>setTimeout(()=>animateOrder(step),index*300));
-   setTimeout(()=>place(order),steps.length*300+300);
+   spin();
+   const duration=Math.max(500,(settings.shuffle_secs||3)*1000);
+   const interval=setInterval(spin,900);
+   setTimeout(()=>{clearInterval(interval);buttons.forEach(b=>b.classList.remove('cup-spinning'));place(order);},duration);
+  }
   }
  }else if(['picking','reveal'].includes(phase)&&order.length===3){
   place(order);
