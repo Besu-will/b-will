@@ -129,6 +129,12 @@ function renderRound(){
  if(myBet&&document.activeElement!==$('stake'))$('stake').value=Number(myBet.stake).toFixed(2);
  $('stake').placeholder=money(settings.min_stake||5);$('minimum-stake').textContent=money(settings.min_stake||5);$('place-bet').textContent=myBet?'Stake placed':'Place Stake';
  $('place-bet').disabled=phase!=='betting';$('stake').disabled=phase!=='betting';
+ const stakeCard=document.querySelector('.bet-card:not(.selection-card)'),pickCard=document.querySelector('.selection-card');
+ stakeCard.classList.toggle('is-active',!!myBet);stakeCard.classList.toggle('is-idle',!myBet);
+ pickCard.classList.toggle('is-active',phase==='picking'&&!!myBet);pickCard.classList.toggle('is-idle',phase!=='picking'||!myBet);
+ $('place-bet').textContent=myBet?'STAKE PLACED':'BET';
+ $('submit-guesses').textContent=phase==='picking'&&myBet?(selectionSlots.length?'CONFIRM PICKS':'CHOOSE CUPS'):'PICKS LOCKED';
+
  document.querySelectorAll('.cup').forEach(b=>{
   const position=Number(b.dataset.cup),identity=Number(b.dataset.identity||b.dataset.cup);
   const win=phase==='reveal'&&Number(round.revealed_cup)===position;
