@@ -36,7 +36,7 @@
 /* Three-cup reveal and shuffle game */
 .item-token{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:50%;background:linear-gradient(145deg,#f7d98c,#b9842d);color:#39280d;font-size:17px;font-weight:900;box-shadow:0 3px 14px #e8bd6366;margin-top:-2px}
 .item-token.hidden{display:none!important}
-.cup.shuffle-run{z-index:4;animation:cup-shuffle 4.7s cubic-bezier(.35,.05,.2,1) forwards}
+.cup.shuffle-run{z-index:4;animation:cup-shuffle 3s cubic-bezier(.35,.05,.2,1) forwards}
 @keyframes cup-shuffle{
  0%{transform:translateX(0) rotate(0)}
  15%{transform:translateX(var(--mid)) rotate(8deg)}
