@@ -58,52 +58,13 @@ async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_
 function profile(){$('available').textContent=money(me.available);if($('screen-balance'))$('screen-balance').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
 function arrangeCups(){
- const wrap=document.querySelector('.cups'),buttons=[...wrap.querySelectorAll('.cup')];
- buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=String(i+1)});
- const order=(gameState&&gameState.shuffle_order||[]).map(Number);
- const cupFor=id=>buttons.find(x=>Number(x.dataset.identity)===id);
- const place=ids=>ids.forEach((identity,index)=>{const b=cupFor(identity);if(b){b.dataset.cup=String(index+1);b.style.gridColumnStart=String(index+1)}});
- const glideTo=ids=>{
-  const before=new Map(buttons.map(b=>[b,b.getBoundingClientRect()]));
-  place(ids);
-  const moves=[];
-  buttons.forEach((b,i)=>{
-   const a=before.get(b),z=b.getBoundingClientRect(),dx=a.left-z.left,dy=a.top-z.top;
-   if(Math.abs(dx)+Math.abs(dy)<1)return;
-   b.style.transition='none';
-   b.style.transform='translate3d('+dx+'px,'+dy+'px,0) rotateZ('+(dx>0?-5:5)+'deg) scale(1.035)';
-   moves.push(b);
-  });
-  void wrap.offsetWidth;
-  requestAnimationFrame(()=>moves.forEach((b,i)=>{
-   b.style.transition='transform 520ms cubic-bezier(.16,.82,.22,1)';
-   b.style.transform='';
-   b.style.transitionDelay=(i*28)+'ms';
-   setTimeout(()=>{b.style.transition='';b.style.transitionDelay=''},590+i*28);
-  }));
- };
- const phase=round?.phase;
- if(phase==='shuffle'&&order.length===3){
-  const key=round.round_id+':'+order.join('');
-  if(lastRenderedShuffle!==key){
-   lastRenderedShuffle=key;
-   let current=[1,2,3],step=0;
-   const swap=()=>{
-    const pairs=[[0,2],[0,1],[1,2],[0,2],[1,0],[2,1]];
-    const [a,b]=pairs[step%pairs.length];
-    [current[a],current[b]]=[current[b],current[a]];
-    glideTo(current);
-    buttons.forEach((cup,k)=>{cup.style.setProperty('--spin-delay',(k*28)+'ms');cup.classList.remove('cup-spinning')});
-    if(window.bwSound)window.bwSound('shuffle');
-    step++;
-   };
-   swap();
-   const interval=setInterval(swap,520);
-   const duration=Math.max(500,(settings.shuffle_secs||3)*1000);
-   setTimeout(()=>{clearInterval(interval);buttons.forEach(b=>{b.classList.remove('cup-spinning');b.style.transitionDelay=''});glideTo(order)},duration);
-  }
- }else if((phase==='picking'||phase==='reveal')&&order.length===3){place(order)}
- else if(phase==='betting'||phase==='preview'){place([1,2,3]);lastRenderedShuffle=null}
+ const doors=[...document.querySelectorAll('.cups .cup')];
+ doors.forEach((door,index)=>{
+  door.dataset.cup=String(index+1);
+  door.style.gridColumnStart=String(index+1);
+  door.classList.remove('cup-spinning','preview-lift');
+ });
+ lastRenderedShuffle=null;
 }
 function renderRound(){
  if(!round)return;
@@ -111,10 +72,10 @@ function renderRound(){
  $('phase').textContent=labels[phase]||phase.toUpperCase();$('phase').classList.toggle('reveal',phase==='reveal');
  arrangeCups();
  let hint='Get ready for the next round.';
- if(phase==='preview')hint='The mini ball is revealed beneath the middle cup.';
- if(phase==='shuffle')hint='Watch the cups spin and swap places rapidly.';
- if(phase==='picking')hint='Tap a cup, choose a panel and press BET. Each panel is an independent bet.';
- if(phase==='reveal')hint='The ball was under Cup '+(round.revealed_cup||'—')+'.';
+ if(phase==='preview')hint='The three doors are sealed. Get ready to choose.';
+ if(phase==='shuffle')hint='The doors lock. Your choice is coming up.';
+ if(phase==='picking')hint='Choose a door, set your stake, and place your bet.';
+ if(phase==='reveal')hint='Door '+(round.revealed_cup||'—')+' opens. The prize is revealed.';
  $('cup-hint').textContent=hint;
  document.querySelectorAll('.bet-card').forEach(card=>{
   const slot=Number(card.dataset.slot),bet=myBets.find(x=>Number(x.bet_slot)===slot),placed=!!(bet&&bet.guesses&&bet.guesses.length);
@@ -129,10 +90,10 @@ function renderRound(){
  document.querySelectorAll('.cup').forEach(b=>{
   const position=Number(b.dataset.cup),win=phase==='reveal'&&Number(round.revealed_cup)===position;
   const ball=$('reveal-ball');
-  ball.classList.toggle('hidden',phase!=='preview');
+  ball.classList.toggle('hidden',phase!=='reveal');
   b.classList.toggle('selected',phase==='picking'&&selectedCup===position);
   b.classList.toggle('winner',win);
-  b.classList.toggle('preview-lift',phase==='preview'&&position===2);
+  b.classList.remove('preview-lift');
   b.querySelector('.cup-check').textContent=win?'✦':'';
   b.querySelector('small').textContent=win?'BALL FOUND':selectedCup===position?'SELECTED':'';
   b.disabled=phase!=='picking'||myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===position);
