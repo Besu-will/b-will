@@ -202,3 +202,58 @@
  .bet-card-head small{display:none}
  .selection-slot{grid-template-columns:15px 1fr}
 }
+
+/* B-Will game screen: Aviator-inspired dark live-game presentation */
+.game-stage{
+ position:relative;overflow:hidden;padding:12px 13px 13px!important;
+ border:1px solid #273440!important;border-radius:16px!important;
+ background:
+  radial-gradient(ellipse at 50% 72%,#183b4a66 0,transparent 57%),
+  repeating-linear-gradient(120deg,#ffffff05 0 1px,transparent 1px 42px),
+  linear-gradient(145deg,#080d13 0%,#111923 48%,#080d13 100%)!important;
+ box-shadow:inset 0 1px #ffffff0c,0 14px 34px #0007;
+}
+.game-stage:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#c78b20,#ffca58 45%,#b77713);z-index:1}
+.game-screen-head{height:25px;display:flex;align-items:center;justify-content:space-between;padding:0 3px 8px;color:#c4d0dc;font:700 9px "DM Mono",monospace;letter-spacing:.1em}
+.screen-mode{color:#f0c15b}
+.screen-live{display:flex;align-items:center;gap:6px;color:#8ba0b4;font-size:8px}
+.screen-live i{width:6px;height:6px;border-radius:50%;background:#26d69a;box-shadow:0 0 8px #26d69a}
+.cup-table{
+ position:relative;isolation:isolate;min-height:190px;padding:24px 10px 30px;
+ display:flex;align-items:center;
+ perspective:850px;
+}
+.cup-table:before{
+ content:"";position:absolute;z-index:-2;left:1%;right:1%;top:18px;bottom:21px;
+ border-radius:50% / 18%;
+ background:
+  repeating-linear-gradient(0deg,#ffffff08 0 1px,transparent 1px 13px),
+  linear-gradient(180deg,#283d4b 0%,#172b38 38%,#0b1924 100%);
+ border:1px solid #466071;
+ box-shadow:inset 0 3px 8px #ffffff16,inset 0 -16px 24px #02080d99,0 13px 18px #000a;
+ transform:rotateX(8deg);
+}
+.cup-table:after{content:"";position:absolute;z-index:-1;left:4%;right:4%;top:30px;height:1px;background:#b6d1dc22;box-shadow:0 5px 20px #8db5c044}
+.table-back{position:absolute;z-index:-1;left:2%;right:2%;top:12px;height:16px;border-radius:50%;background:linear-gradient(180deg,#627987,#253c4b 80%);border:1px solid #70899555;box-shadow:0 4px 10px #0009}
+.table-front{position:absolute;z-index:1;left:1%;right:1%;bottom:12px;height:14px;border-radius:0 0 12px 12px;background:linear-gradient(180deg,#1b303d,#0b141d);border:1px solid #314957;border-top:1px solid #8195a055;box-shadow:0 7px 10px #0009;pointer-events:none}
+.cup-table .cups{position:relative;z-index:2;width:100%;min-height:145px!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center!important;gap:8px!important}
+.cup-table .cup{position:relative;z-index:2;min-width:0;min-height:132px!important;display:flex;flex-direction:column;justify-content:center;align-items:center;transform-origin:50% 80%;will-change:transform;transition:transform .25s ease!important}
+.cup-table .cup-art{width:clamp(55px,7vw,78px);height:clamp(78px,9vw,105px);filter:drop-shadow(0 9px 5px #0009)}
+.cup-table .cup-art:before{height:13px}
+.cup-table .cup-label{margin-top:2px;color:#c6d4df!important;text-shadow:0 1px 4px #000;font-weight:700}
+.cup-table .cup small{color:#e7c46f}
+.cup-table .item-token{bottom:26px!important;width:25px!important;height:25px!important;background:radial-gradient(circle at 30% 25%,#e3ff9b 0 7%,#9bd52f 30%,#4b941b 72%,#28640f 100%)!important;border:1px solid #c7ed70;color:transparent!important;box-shadow:inset -4px -5px 8px #164a14,0 5px 12px #000b!important}
+.cup-table .cup:has(.item-token:not(.hidden)) .cup-art{transform:translateY(-18px) rotateX(-4deg)}
+.cup-table .cup.selected .cup-art{filter:drop-shadow(0 0 10px #32dca5)}
+.cup-table .cup.winner .cup-art{filter:drop-shadow(0 0 12px #f0c76d)}
+.cup-table .cup.shuffle-run{z-index:5!important}
+.aviator-bets{margin-top:12px!important}
+.bet-card{background:linear-gradient(150deg,#1b222b,#111820)!important;border-color:#353e49!important;box-shadow:inset 0 1px #ffffff0a,0 7px 16px #0004}
+.bet-card-head b{color:#d6dfe8}
+.stake-input-wrap{background:#080d12!important;border-color:#313c49!important;border-radius:999px!important}
+.stake-quick button{background:#1a222c!important;border-color:#303b47!important;color:#9aaaba!important;border-radius:999px!important}
+.bet-card .btn.primary{background:linear-gradient(180deg,#20b40c,#14920a)!important;border:1px solid #60d947!important;color:#fff!important;border-radius:13px!important;box-shadow:0 3px 0 #0a5d09,0 6px 12px #0005}
+.selection-card .btn.primary{background:linear-gradient(180deg,#e88a13,#c86a00)!important;border-color:#ffb23e!important;box-shadow:0 3px 0 #874500,0 6px 12px #0005}
+.selection-slot{background:#101820!important;border-color:#3a4653!important}
+.selection-slot.filled{background:#12372f!important;border-color:#2dba88!important}
+@media(max-width:560px){.cup-table{min-height:155px;padding:18px 4px 24px}.cup-table .cups{min-height:125px!important;gap:2px!important}.cup-table .cup{min-height:114px!important}.cup-table .cup-art{width:49px;height:70px}.cup-table .item-token{bottom:22px!important}.game-screen-head{font-size:8px}}
