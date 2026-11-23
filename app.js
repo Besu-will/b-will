@@ -16,17 +16,20 @@ function mountNavigation(){
  adminPage.append(admin);
  main.replaceWith(pages);
  const nav=document.createElement('nav');nav.className='bottom-nav';nav.setAttribute('aria-label','Main navigation');
- nav.innerHTML='<button class="nav-item active" data-go="home"><span class="nav-icon">⌂</span><span>Home</span></button><button class="nav-item" data-go="rank"><span class="nav-icon">♛</span><span>Rankings</span></button><button class="nav-item platform-nav hidden" data-go="platform"><span class="nav-icon">▦</span><span>Platform</span></button><button class="nav-item admin-nav hidden" data-go="admin"><span class="nav-icon">⚙</span><span>Admin</span></button><button class="nav-item player-wallet" data-go="wallet"><span class="nav-icon">◇</span><span>Wallet</span></button><button class="nav-item player-activity" data-go="activity"><span class="nav-icon">◷</span><span>Activity</span></button>';
+ nav.innerHTML='<button class="nav-item player-home active" data-go="home"><span class="nav-icon">⌂</span><span>Home</span></button><button class="nav-item player-rank" data-go="rank"><span class="nav-icon">♛</span><span>Rankings</span></button><button class="nav-item platform-nav hidden" data-go="platform"><span class="nav-icon">▦</span><span>Platform</span></button><button class="nav-item admin-nav hidden" data-go="admin"><span class="nav-icon">⚙</span><span>Admin</span></button><button class="nav-item player-wallet" data-go="wallet"><span class="nav-icon">◇</span><span>Wallet</span></button><button class="nav-item player-activity" data-go="activity"><span class="nav-icon">◷</span><span>Activity</span></button>';
  root.insertBefore(nav,foot);
  function go(id){pages.querySelectorAll('.tab-page').forEach(p=>p.classList.toggle('active',p.dataset.page===id));nav.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.go===id));}
  nav.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b&&!b.classList.contains('hidden'))go(b.dataset.go)});
  window.bwShowAdminNav=enabled=>{
+  root.classList.toggle('admin-mode',!!enabled);
+  nav.querySelector('.player-home').classList.toggle('hidden',!!enabled);
+  nav.querySelector('.player-rank').classList.toggle('hidden',!!enabled);
   nav.querySelector('.admin-nav').classList.toggle('hidden',!enabled);
   nav.querySelector('.platform-nav').classList.toggle('hidden',!enabled);
   nav.querySelector('.player-wallet').classList.toggle('hidden',!!enabled);
   nav.querySelector('.player-activity').classList.toggle('hidden',!!enabled);
-  if(enabled&&['wallet','activity'].includes(pages.querySelector('.tab-page.active')?.dataset.page))go('home');
-  if(!enabled&&['admin','platform'].includes(pages.querySelector('.tab-page.active')?.dataset.page))go('home');
+  if(enabled)go('admin');
+  else go('home');
  };
  go('home');
 }
