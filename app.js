@@ -58,10 +58,10 @@ function profile(){$('available').textContent=money(me.available);if($('screen-b
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
 function arrangeCups(){
  const wrap=document.querySelector('.cups');
- let buttons=[...wrap.querySelectorAll('.cup')];
+ const buttons=[...wrap.querySelectorAll('.cup')];
  buttons.forEach((b,i)=>{if(!b.dataset.identity)b.dataset.identity=b.dataset.cup||String(i+1);});
  const order=(gameState&&gameState.shuffle_order||[]).map(Number);
- const place=(identityOrder)=>{
+ const place=identityOrder=>{
   identityOrder.forEach((identity,index)=>{
    const b=buttons.find(x=>Number(x.dataset.identity)===identity);
    if(b){b.dataset.cup=String(index+1);b.querySelector('.cup-label').textContent='Cup '+(index+1);}
@@ -83,13 +83,17 @@ function arrangeCups(){
    spin();
    const duration=Math.max(500,(settings.shuffle_secs||3)*1000);
    const interval=setInterval(spin,900);
-   setTimeout(()=>{clearInterval(interval);buttons.forEach(b=>b.classList.remove('cup-spinning'));place(order);},duration);
+   setTimeout(()=>{
+    clearInterval(interval);
+    buttons.forEach(b=>b.classList.remove('cup-spinning'));
+    place(order);
+   },duration);
   }
-  }
- }else if(['picking','reveal'].includes(phase)&&order.length===3){
+ }else if((phase==='picking'||phase==='reveal')&&order.length===3){
   place(order);
  }else if(phase==='betting'||phase==='preview'){
-  place([1,2,3]);lastRenderedShuffle=null;
+  place([1,2,3]);
+  lastRenderedShuffle=null;
  }
 }
 function renderRound(){
