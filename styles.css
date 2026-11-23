@@ -615,3 +615,30 @@ body{background:#05070a!important;color:#f2f5f7!important;font-family:Manrope,sy
 #app:not(.admin-mode) .cup.selected{filter:drop-shadow(0 0 15px #49e99c)!important}
 #app:not(.admin-mode) .bet-card.placed-panel{animation:placed-flash .65s ease-out!important}
 @media(max-width:560px){#app:not(.admin-mode) .game-stage{height:clamp(390px,104vw,510px)!important}#app:not(.admin-mode) .cups{top:42%!important}#app:not(.admin-mode) .cup{height:clamp(118px,29vw,148px)!important}#app:not(.admin-mode) .bet-actions{grid-template-columns:minmax(0,1fr) 27%!important}}
+
+
+/* THREE DOORS — stationary architecture, hinged reveal */
+#app:not(.admin-mode) .game-stage{background:radial-gradient(ellipse at 50% 42%,#263342 0%,#111a27 48%,#070b12 100%)!important}
+#app:not(.admin-mode) .room-wall{inset:0 0 34%!important;background:linear-gradient(180deg,#101b2b,#1b2b3b 68%,#0d1723)!important}
+#app:not(.admin-mode) .room-wall:before{opacity:.22!important;background:linear-gradient(90deg,#0008,transparent 18%,transparent 82%,#0008),repeating-linear-gradient(90deg,transparent 0 23%,#b6c5d012 23.2%,transparent 23.5%)!important}
+#app:not(.admin-mode) .wood-floor{inset:66% -12% -5%!important;background:repeating-linear-gradient(90deg,#111923 0 92px,#1c2835 94px,#0a111a 98px),repeating-linear-gradient(0deg,#26303b 0 54px,#111923 56px)!important}
+#app:not(.admin-mode) .cups{top:27%!important;left:5%!important;right:5%!important;gap:3%!important;perspective:1200px!important;align-items:stretch!important}
+#app:not(.admin-mode) .cup{height:clamp(190px,43vw,260px)!important;min-height:185px!important;transform:none!important;filter:none!important;display:block!important;cursor:pointer!important}
+#app:not(.admin-mode) .cup-art{position:absolute!important;inset:0 7%!important;clip-path:none!important;border-radius:7px 7px 3px 3px!important;border:5px solid #6f5637!important;background:linear-gradient(90deg,#241b16,#59412b 12%,#87643c 48%,#503a28 88%,#211913)!important;box-shadow:inset 0 0 0 3px #c2a16b55,inset 0 0 30px #0009,0 18px 30px #000b!important;transform-origin:left center;transition:transform .95s cubic-bezier(.2,.72,.2,1),filter .35s!important;backface-visibility:visible!important}
+#app:not(.admin-mode) .cup-art:before{content:""!important;position:absolute!important;inset:10px!important;border:1px solid #d6b47a77!important;border-radius:2px!important;background:linear-gradient(135deg,#ffffff08,transparent 55%)!important;box-shadow:inset 0 0 20px #0005!important}
+#app:not(.admin-mode) .cup-art:after{content:""!important;position:absolute!important;left:50%!important;top:42%!important;width:30px!important;height:30px!important;inset:auto auto auto 50%!important;transform:translate(-50%,-50%)!important;border:2px solid #e4c58d!important;border-radius:50%!important;background:radial-gradient(circle at 35% 30%,#f8e2b4,#8f6a3e 65%,#3a2819)!important;box-shadow:0 2px 8px #000a!important;opacity:1!important}
+#app:not(.admin-mode) .door-knob{position:absolute;z-index:2;right:17%;top:48%;width:9px;height:9px;border-radius:50%;background:#f3d18a;box-shadow:0 0 0 3px #4b351f,0 1px 5px #000!important}
+#app:not(.admin-mode) .door-mark{position:absolute;left:50%;bottom:13%;width:38px;height:38px;transform:translateX(-50%);border:1px solid #e1c18a;border-radius:50%;opacity:.7}
+#app:not(.admin-mode) .cup:nth-child(1) .cup-art{background:linear-gradient(90deg,#261b18,#704034 18%,#a65a43 52%,#63352d 86%,#211615)!important;border-color:#9c6551!important}
+#app:not(.admin-mode) .cup:nth-child(2) .cup-art{background:linear-gradient(90deg,#172637,#345777 18%,#5c83a4 52%,#2d4c69 86%,#121d2a)!important;border-color:#7d9db7!important}
+#app:not(.admin-mode) .cup:nth-child(3) .cup-art{background:linear-gradient(90deg,#302719,#78613a 18%,#b39151 52%,#6b512d 86%,#251d13)!important;border-color:#c4a36a!important}
+#app:not(.admin-mode) .cup.selected{transform:translateY(-8px)!important;filter:drop-shadow(0 0 16px #8de6c0)!important}
+#app:not(.admin-mode) .cup.selected .cup-art{filter:brightness(1.2)!important}
+#app:not(.admin-mode) .cup.winner{animation:none!important;filter:drop-shadow(0 0 24px #f5d58c)!important;transform:translateY(-5px)!important}
+#app:not(.admin-mode) .cup.winner .cup-art{transform:perspective(900px) rotateY(-72deg)!important;box-shadow:inset 0 0 0 3px #f5d58c88,0 18px 30px #000b!important}
+#app:not(.admin-mode) .cup-label{display:block!important;bottom:-30px!important;color:#e7d2ad!important;font-size:12px!important;letter-spacing:2px!important}
+#app:not(.admin-mode) .cup-check{top:-28px!important;right:45%!important}
+#app:not(.admin-mode) .cup-hint{bottom:5%!important;letter-spacing:.4px!important}
+#app:not(.admin-mode) .reveal-ball{top:62%!important;width:28px!important;height:28px!important;z-index:2!important}
+@media(max-width:560px){#app:not(.admin-mode) .game-stage{height:clamp(420px,112vw,560px)!important}#app:not(.admin-mode) .cups{top:29%!important;left:3%!important;right:3%!important;gap:1%!important}#app:not(.admin-mode) .cup{height:clamp(180px,48vw,225px)!important}#app:not(.admin-mode) .cup-art{inset:0 5%!important;border-width:4px!important}#app:not(.admin-mode) .cup-label{font-size:10px!important}}
+@media(prefers-reduced-motion:reduce){#app:not(.admin-mode) .cup-art{transition:none!important}}
