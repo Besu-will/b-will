@@ -2,11 +2,11 @@
 const cfg=window.BW_CONFIG||{},$=id=>document.getElementById(id),money=v=>Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),date=s=>s?new Date(s).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 
 function mountNavigation(){
- const root=$('app'),stats=root.querySelector('.stats'),main=root.querySelector('.main-grid'),primary=main.firstElementChild,side=main.querySelector('.side-stack'),admin=$('admin-panel'),foot=root.querySelector('.foot');
+ const root=$('app'),stats=root.querySelector('.stats'),main=root.querySelector('.main-grid'),primary=main.firstElementChild,side=main.querySelector('.side-stack'),primaryPanels=[...primary.children],sidePanels=[...side.children],admin=$('admin-panel'),foot=root.querySelector('.foot');
  const pages=document.createElement('div');pages.className='page-stack';pages.id='page-stack';
  const make=(id)=>{const p=document.createElement('section');p.className='tab-page';p.dataset.page=id;pages.appendChild(p);return p};
  const home=make('home'),wallet=make('wallet'),rank=make('rank'),activity=make('activity'),adminPage=make('admin');
- home.append(stats,primary.children[0]);wallet.append(primary.children[1]);rank.append(side.children[0]);activity.append(side.children[1],side.children[2]);adminPage.append(admin);
+ home.append(stats,primaryPanels[0]);wallet.append(primaryPanels[1]);rank.append(sidePanels[0]);activity.append(sidePanels[1],sidePanels[2]);adminPage.append(admin);
  main.replaceWith(pages);
  const nav=document.createElement('nav');nav.className='bottom-nav';nav.setAttribute('aria-label','Main navigation');
  nav.innerHTML='<button class="nav-item active" data-go="home"><span class="nav-icon">⌂</span><span>Home</span></button><button class="nav-item" data-go="wallet"><span class="nav-icon">◇</span><span>Wallet</span></button><button class="nav-item" data-go="rank"><span class="nav-icon">♛</span><span>Rankings</span></button><button class="nav-item" data-go="activity"><span class="nav-icon">◷</span><span>Activity</span></button><button class="nav-item admin-nav hidden" data-go="admin"><span class="nav-icon">⚙</span><span>Admin</span></button>';
