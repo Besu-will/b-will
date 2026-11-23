@@ -12,3 +12,7 @@
 .nav-item:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 @media(min-width:901px){.page-stack{padding-bottom:100px}.tab-page{max-width:900px}}
 @media(max-width:560px){.wrap{padding-bottom:112px}.bottom-nav{bottom:max(8px,env(safe-area-inset-bottom));padding:7px 5px}.nav-item{font-size:9px}.nav-icon{font-size:19px}.page-stack{padding-bottom:10px}}
+
+/* Admin and platform navigation layout */
+.bottom-nav{width:min(440px,calc(100% - 24px));grid-template-columns:repeat(4,minmax(0,1fr))}
+.admin .admin-grid{grid-template-columns:minmax(0,1fr)}
