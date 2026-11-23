@@ -49,3 +49,23 @@
 .cup:disabled{opacity:1;cursor:default}
 .cup.selected{border-color:var(--red);box-shadow:inset 0 0 0 1px #f2777755}
 .cup.winner{background:linear-gradient(155deg,#40351d,#1d2b32)}
+
+#app:not(.admin-mode) .stats{display:none!important}
+.balance-badge{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:7px 13px;border:1px solid #286b57;background:linear-gradient(145deg,#12372f,#10241f);border-radius:13px;min-width:116px}
+.balance-badge small{font-size:8px;letter-spacing:.13em;color:#91b9aa}
+.balance-badge strong{font:700 17px "DM Mono",monospace;color:#76e4b7;margin-top:3px}
+.game-panel{overflow:hidden}.game-panel>.panel-head{margin-bottom:20px}
+.game-stage{padding:18px;border:1px solid #253b50;border-radius:18px;background:radial-gradient(ellipse at 50% 0%,#25463f55,transparent 70%),linear-gradient(145deg,#0b1724,#101d2b)}
+.game-stage .cups{gap:clamp(7px,2vw,18px)}
+.game-stage .cup{min-height:160px;border-radius:18px;background:linear-gradient(155deg,#243c50,#122131);box-shadow:inset 0 1px 0 #ffffff0b,0 12px 22px #0003}
+.game-stage .cup-icon{font-size:clamp(42px,7vw,60px);filter:drop-shadow(0 7px 7px #0005)}
+.game-stage .cup b.cup-label{font-size:12px;letter-spacing:.04em}
+.game-stage .item-token{width:31px;height:31px;font-size:20px;position:relative;z-index:2}
+.selection-area{margin-top:20px;padding:15px;border:1px solid #263b50;border-radius:15px;background:#0b1623}
+.selection-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.selection-heading b{font-size:12px}.selection-heading small{font-size:10px;color:var(--muted)}
+.selection-slots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.selection-slot{min-height:54px;border:1px dashed #38516a;border-radius:12px;background:#101e2d;color:#9fb0c1;font-size:11px;font-weight:800;letter-spacing:.05em}
+.selection-slot.filled{border-style:solid;border-color:#2e9974;background:#12372f;color:#8ef0c8}
+#app:not(.admin-mode) .topbar{margin-bottom:18px}
+@media(max-width:560px){.top-actions{gap:6px}.balance-badge{min-width:98px;padding:6px 9px}.balance-badge strong{font-size:14px}#user-pill{display:none}.game-stage{padding:10px}.game-stage .cup{min-height:128px;padding:13px 4px}.selection-area{padding:12px}}
