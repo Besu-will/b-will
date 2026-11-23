@@ -57,25 +57,24 @@ async function enterApp(){if(!user||entering)return;entering=true;let timer;show
 async function refreshAll(){if(!user)return;const r=await Promise.all([rpc('bwl_me'),sb.from('bwl_round').select('*').eq('id',1).single(),sb.from('bwl_settings').select('*').eq('id',1).single(),rpc('bwl_leaderboard'),sb.from('bwl_results').select('*').order('round_id',{ascending:false}).limit(8),sb.from('bwl_requests').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(10),rpc('bwl_now'),rpc('bwl_game_state')]);me=r[0];if(!me)throw Error('Account profile is not ready.');round=r[1].data;settings=r[2].data;offset=new Date(r[6]).getTime()-Date.now();if(lastRound!==null&&lastRound!==round.round_id){selectedCup=null;lastRenderedShuffle=null;}lastRound=round.round_id;const b=await sb.from('bwl_bets').select('*').eq('round_id',round.round_id).eq('user_id',user.id).order('bet_slot');myBets=b.data||[];gameState=r[7]||{};activeSlot=myBets.some(x=>x.bet_slot===1&&!x.guesses?.length)?2:1;profile();renderRound();leaderboard(r[3]);results(r[4].data||[]);requests(r[5].data||[]);renderSettings();if(isAdmin())await admin();lastRefresh=Date.now()}
 function profile(){$('available').textContent=money(me.available);if($('screen-balance'))$('screen-balance').textContent=money(me.available);$('user-pill').textContent=me.username||me.email||'Player'}
 $('refresh-balance').onclick=async()=>{const b=$('refresh-balance');b.classList.add('spinning');try{await refreshAll()}catch(e){toast(e.message||String(e))}finally{b.classList.remove('spinning')}};
-function arrangeCups(){
- const doors=[...document.querySelectorAll('.cups .cup')];
- doors.forEach((door,index)=>{
-  door.dataset.cup=String(index+1);
-  door.style.gridColumnStart=String(index+1);
-  door.classList.remove('cup-spinning','preview-lift');
+function arrangeColors(){
+ document.querySelectorAll('.cups .cup').forEach((color,index)=>{
+  color.dataset.cup=String(index+1);
+  color.style.gridColumnStart=String(index+1);
+  color.classList.remove('cup-spinning','preview-lift');
  });
  lastRenderedShuffle=null;
 }
 function renderRound(){
  if(!round)return;
- const phase=round.phase,labels={betting:'GET READY',preview:'FIRST REVEAL',shuffle:'SHUFFLING',picking:'PLACE YOUR BET',reveal:'FINAL REVEAL'};
+ const phase=round.phase,labels={betting:'NEXT ROUND',preview:'COLOR DRAW',shuffle:'COLOR DRAW',picking:'CHOOSE A COLOR',reveal:'WINNING COLOR'};
  $('phase').textContent=labels[phase]||phase.toUpperCase();$('phase').classList.toggle('reveal',phase==='reveal');
- arrangeCups();
+ arrangeColors();
  let hint='Get ready for the next round.';
- if(phase==='preview')hint='The three doors are sealed. Get ready to choose.';
- if(phase==='shuffle')hint='The doors lock. Your choice is coming up.';
- if(phase==='picking')hint='Choose a door, set your stake, and place your bet.';
- if(phase==='reveal')hint='Door '+(round.revealed_cup||'—')+' opens. The prize is revealed.';
+ if(phase==='preview')hint='Three colors. One will win. Get ready.';
+ if(phase==='shuffle')hint='Choose the color you think will win.';
+ if(phase==='picking')hint='Choose red, blue, or gold. Set your stake and place your bet.';
+ if(phase==='reveal')hint=['','Red','Blue','Gold'][Number(round.revealed_cup)]+' wins this round.';
  $('cup-hint').textContent=hint;
  document.querySelectorAll('.bet-card').forEach(card=>{
   const slot=Number(card.dataset.slot),bet=myBets.find(x=>Number(x.bet_slot)===slot),placed=!!(bet&&bet.guesses&&bet.guesses.length);
@@ -85,7 +84,7 @@ function renderRound(){
   input.disabled=phase!=='picking'||placed;
   const btn=$('place-bet-'+slot);btn.disabled=phase!=='picking'||!selectedCup||placed;
   btn.textContent=placed?'PLACED':'BET';
-  $('bet-status-'+slot).textContent=placed?'✓ BET PLACED · CUP '+bet.guesses[0]:selectedCup&&activeSlot===slot?'CUP '+selectedCup+' SELECTED':'Tap a cup to activate this panel';
+  $('bet-status-'+slot).textContent=placed?'✓ BET PLACED · '+['','RED','BLUE','GOLD'][Number(bet.guesses[0])]:selectedCup&&activeSlot===slot?['','RED','BLUE','GOLD'][selectedCup]+' SELECTED':'Choose a color to activate this panel';
  });
  document.querySelectorAll('.cup').forEach(b=>{
   const position=Number(b.dataset.cup),win=phase==='reveal'&&Number(round.revealed_cup)===position;
@@ -95,7 +94,7 @@ function renderRound(){
   b.classList.toggle('winner',win);
   b.classList.remove('preview-lift');
   b.querySelector('.cup-check').textContent=win?'✦':'';
-  b.querySelector('small').textContent=win?'BALL FOUND':selectedCup===position?'SELECTED':'';
+  b.querySelector('small').textContent=win?'WINNER':selectedCup===position?'SELECTED':'';
   b.disabled=phase!=='picking'||myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===position);
  });
  $('bet-note').textContent='Minimum stake '+money(settings.min_stake||5)+' · Each panel places one independent bet.';
@@ -104,7 +103,7 @@ document.querySelectorAll('.bet-card').forEach(card=>card.addEventListener('clic
 document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
  if(round?.phase!=='picking')return;
  const cup=Number(b.dataset.cup);
- if(myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===cup)){toast('That cup is already used by one of your bets.');return}
+ if(myBets.some(x=>x.guesses?.length&&Number(x.guesses[0])===cup)){toast('That color is already used by one of your bets.');return}
  selectedCup=cup;if(window.bwSound)window.bwSound('select');
  const firstOpen=[1,2].find(slot=>!myBets.some(x=>Number(x.bet_slot)===slot&&x.guesses?.length));
  if(firstOpen)activeSlot=firstOpen;
@@ -114,7 +113,7 @@ document.querySelectorAll('[data-place-slot]').forEach(b=>b.onclick=async()=>{
  const slot=Number(b.dataset.placeSlot),stake=Number($('stake-'+slot).value);
  activeSlot=slot;renderRound();
  try{
-  if(!selectedCup)throw Error('Tap the cup you want to bet on first.');
+  if(!selectedCup)throw Error('Choose the color you want to bet on first.');
   if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');
   b.disabled=true;b.classList.add('loading');
   await rpc('bwl_place_bet',{p_stake:stake,p_slot:slot,p_cup:selectedCup});
@@ -131,7 +130,7 @@ document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
 });
 function requests(rows){$('my-requests').innerHTML=rows.length?rows.map(r=>'<div class="request"><div><strong>'+esc(r.kind)+' · '+money(r.amount)+'</strong><small>'+date(r.created_at)+'</small></div><div class="inline"><span class="status '+esc(r.status)+'">'+esc(r.status)+'</span>'+(r.kind==='withdraw'&&r.status==='pending'?'<button class="btn small danger" data-cancel="'+r.id+'">Cancel</button>':'')+'</div></div>').join(''):'<div class="empty">No wallet requests yet.</div>';$('my-requests').querySelectorAll('[data-cancel]').forEach(b=>b.onclick=async()=>{try{await rpc('bwl_cancel_withdraw',{p_id:Number(b.dataset.cancel)});toast('Withdrawal cancelled. Funds returned.');await refreshAll()}catch(e){toast(e.message||String(e))}})}
 function leaderboard(rows){$('lb-status').textContent=settings.leaderboard_on?'Counting ON':'Counting OFF';$('leaderboard').innerHTML=rows.length?'<table class="table"><thead><tr><th>Rank</th><th>Player</th><th class="right">Wins</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="rank">'+r.rank+'</td><td>'+esc(r.username)+'</td><td class="right mono">'+r.wins+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">No wins recorded yet.</div>'}
-function results(rows){$('results').innerHTML=rows.length?'<table class="table"><thead><tr><th>Round</th><th>Winning cup</th><th class="right">Pool</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="mono">#'+r.round_id+'</td><td class="gold">Cup '+r.winning_cup+'</td><td class="right mono">'+money(r.total_pool)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">Round results will appear here.</div>'}
+function results(rows){$('results').innerHTML=rows.length?'<table class="table"><thead><tr><th>Round</th><th>Winning color</th><th class="right">Pool</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="mono">#'+r.round_id+'</td><td class="gold">Color '+['','Red','Blue','Gold'][Number(r.winning_cup)]+'</td><td class="right mono">'+money(r.total_pool)+'</td></tr>').join('')+'</tbody></table>':'<div class="empty">Round results will appear here.</div>'}
 async function history(){const r=await sb.from('bwl_leaderboard_history').select('*').order('saved_at',{ascending:false}).limit(100);if(r.error){$('history').innerHTML='<div class="empty">History unavailable.</div>';return}const groups={};(r.data||[]).forEach(x=>(groups[x.batch_id]||(groups[x.batch_id]=[])).push(x));const keys=Object.keys(groups);$('history').innerHTML=keys.length?keys.map(k=>{const a=groups[k].sort((x,y)=>x.rank-y.rank);return '<div class="history-batch"><b>Saved '+date(a[0].saved_at)+'</b><table class="table"><tbody>'+a.slice(0,5).map(x=>'<tr><td class="rank">'+x.rank+'</td><td>'+esc(x.username)+'</td><td class="right mono">'+x.total_wins+' wins</td></tr>').join('')+'</tbody></table></div>'}).join(''):'<div class="empty">No archived tournaments yet.</div>'}
 function renderSettings(){if($('admin-panel').dataset.settingsDirty==='true')return;$('set-betting').value=settings.betting_secs;$('set-preview').value=settings.preview_secs;$('set-shuffle').value=settings.shuffle_secs;$('set-picking').value=settings.picking_secs;$('set-reveal').value=settings.reveal_secs;$('set-min').value=settings.min_stake;$('set-cut').value=settings.house_cut_pct;$('set-lb').classList.toggle('on',!!settings.leaderboard_on);$('lb-status').textContent=settings.leaderboard_on?'Counting ON':'Counting OFF'}
 ['set-betting','set-preview','set-shuffle','set-picking','set-reveal','set-min','set-cut'].forEach(id=>$(id).addEventListener('input',()=>{$('admin-panel').dataset.settingsDirty='true'}));
