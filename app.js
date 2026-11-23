@@ -100,9 +100,9 @@ function renderRound(){
  if(phase==='picking')hint=!myBet?'You did not place a stake in this round.':picks.length?'Your selection is locked in. Wait for the result.':'Choose one cup or fill both slots, then confirm.';
  if(phase==='reveal')hint='The item was under Cup '+(round.revealed_cup||'—')+'. Payouts have been settled.';
  $('cup-hint').textContent=hint;
- $('selection-display').value=picks.length?(picks.length+' cup'+(picks.length===1?'':'s')+' submitted'):'Choose one or two cups';
+ $('selection-display').textContent=picks.length?(picks.length+' / 2'): (selectionSlots.length+' / 2');
  if(myBet&&document.activeElement!==$('stake'))$('stake').value=Number(myBet.stake).toFixed(2);
- $('stake').placeholder=money(settings.min_stake||5);$('place-bet').textContent=myBet?'Stake placed':'Place Stake';
+ $('stake').placeholder=money(settings.min_stake||5);$('minimum-stake').textContent=money(settings.min_stake||5);$('place-bet').textContent=myBet?'Stake placed':'Place Stake';
  $('place-bet').disabled=phase!=='betting';$('stake').disabled=phase!=='betting';
  document.querySelectorAll('.cup').forEach(b=>{
   const position=Number(b.dataset.cup),identity=Number(b.dataset.identity||b.dataset.cup);
@@ -117,12 +117,12 @@ function renderRound(){
  });
  [1,2].forEach(slotIndex=>{
   const slot=$('slot-'+slotIndex),cup=selectionSlots[slotIndex-1];
-  slot.textContent=cup?'SLOT '+slotIndex+' · CUP '+cup:'SLOT '+slotIndex+' · EMPTY';
+  slot.querySelector('.slot-value').textContent=cup?'CUP '+cup:'EMPTY';
   slot.classList.toggle('filled',!!cup);
   slot.disabled=phase!=='picking'||picks.length>0||!cup;
  });
  $('submit-guesses').disabled=phase!=='picking'||!myBet||picks.length>0||selectionSlots.length===0;
- $('submit-guesses').textContent=selectionSlots.length===1?'Confirm 1 Cup':selectionSlots.length===2?'Confirm 2 Cups':'Confirm Selection';
+ $('submit-guesses').textContent=selectionSlots.length===1?'Confirm 1 Pick':selectionSlots.length===2?'Confirm 2 Picks':'Confirm Picks';
  $('bet-note').textContent=myBet?'Your stake: '+money(myBet.stake):'Minimum stake '+money(settings.min_stake)+' · One stake per round.';
 }
 document.querySelectorAll('.cup').forEach(b=>b.onclick=()=>{
@@ -146,6 +146,7 @@ $('submit-guesses').onclick=async()=>{
   selectionSlots=[];toast('Selection confirmed. Good luck!');await refreshAll();
  }catch(e){toast(e.message||String(e))}
 };
+document.querySelectorAll('[data-stake]').forEach(b=>b.onclick=()=>{if(!$('stake').disabled)$('stake').value=b.dataset.stake});
 $('place-bet').onclick=async()=>{try{const stake=Number($('stake').value);if(!Number.isFinite(stake)||stake<=0)throw Error('Enter a valid stake.');await rpc('bwl_place_bet',{p_stake:stake});toast('Stake saved. Watch for the item reveal.');await refreshAll()}catch(e){toast(e.message||String(e))}};
 $('deposit-btn').onclick=async()=>{try{await rpc('bwl_request_deposit',{p_amount:Number($('deposit-amount').value)});$('deposit-amount').value='';toast('Deposit request submitted.');await refreshAll()}catch(e){toast(e.message||String(e))}};
 $('withdraw-btn').onclick=async()=>{try{await rpc('bwl_request_withdraw',{p_amount:Number($('withdraw-amount').value)});$('withdraw-amount').value='';toast('Withdrawal request submitted. Funds are locked.');await refreshAll()}catch(e){toast(e.message||String(e))}};
